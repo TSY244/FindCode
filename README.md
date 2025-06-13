@@ -1,0 +1,514 @@
+# 简介
+
+该项目可以用于
+- 在指定的函数中寻找特定的代码
+- 只过滤出想获取的函数
+- 查找指定的代码片段
+
+
+
+如果你是一个代码审计的低手，之前做java 安全的，明白了在go 项目中重点应该关注api 的逻辑问题，因此你打开了一个go 项目，发现这个框架是公司自己写的，那么那还得去学习项目逻辑，才能定位到api函数。如果使用该工具可以使用rule 定位该项目的api。详情可见下面的例子。
+
+# 测试
+## gin
+
+``` yaml
+task_name: gin扫描测试
+
+mode:
+  - go
+
+go_mode_target_rule:
+  rule: 'true'
+
+func_rule:
+  - func_name: # v2 版本trpc
+      rule: 'beginWithLower()'
+    param_name:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("c")'
+    param_type:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("*gin.Context")'
+    return_type:
+      rules:
+        - size: 0
+          rules:
+    recv_type:
+      rule: 'beginStr("*")'
+    recv_name:
+      rule: 'true'
+
+
+path:
+  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  deepsize: 10
+
+file:
+  rule: 'true'  # 默认已排除 test 文件和非 go 文件，无需额外配置
+```
+
+上面就是所用到的函数规则，下面展示代码的扫描结果
+
+```text
+
+/product/code/routers/staff_key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+40:61:apply
+63:84:reApply
+86:108:mySelf
+110:132:myApprove
+134:155:enable
+157:174:delete
+176:198:encrypt
+200:222:decrypt
+
+
+/product/routers/staff_key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+40:61:apply
+63:84:reApply
+86:108:mySelf
+110:132:myApprove
+134:155:enable
+157:174:delete
+176:198:encrypt
+200:222:decrypt
+
+
+/product/routers/base_info.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+29:36:products
+
+
+/product/code/routers/service.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+47:63:apply
+65:83:mySelf
+85:104:maybe
+106:119:getById
+121:133:delete
+135:151:update
+153:169:reApply
+171:184:getSecretKey
+186:198:newSecretKey
+200:216:enable
+218:235:myApprove
+237:254:encrypt
+256:273:decrypt
+275:292:keyVersion
+
+
+/product/code/routers/ioa.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+34:37:token
+39:46:getStaff
+48:50:error
+52:54:ok
+
+
+/product/routers/apply.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+34:50:approve
+52:69:getApproveInfo
+
+
+/product/routers/service.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+47:63:apply
+65:83:mySelf
+85:104:maybe
+106:119:getById
+121:133:delete
+135:151:update
+153:169:reApply
+171:184:getSecretKey
+186:198:newSecretKey
+200:216:enable
+218:235:myApprove
+237:254:encrypt
+256:273:decrypt
+275:292:keyVersion
+
+
+/product/routers/service_key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+44:60:keyApply
+62:79:keyList
+81:98:myKeyList
+100:116:reApplyKey
+118:134:keyEnable
+136:149:getKeyById
+151:163:deleteKey
+165:181:applyToken
+183:199:tokenEnable
+201:218:myToken
+220:237:myTokenApprove
+
+
+/product/routers/key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+43:59:create
+61:78:list
+80:97:oldList
+99:115:enable
+117:133:planDelete
+135:147:cancelDelete
+149:161:delete
+163:179:update
+181:194:getKeyValue
+196:212:updateKeyValue
+214:231:myApprove
+
+
+/product/code/routers/base_info.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+29:36:products
+
+
+/product/code/routers/key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+43:59:create
+61:78:list
+80:97:oldList
+99:115:enable
+117:133:planDelete
+135:147:cancelDelete
+149:161:delete
+163:179:update
+181:194:getKeyValue
+196:212:updateKeyValue
+214:231:myApprove
+
+
+/product/code/routers/service_key.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+44:60:keyApply
+62:79:keyList
+81:98:myKeyList
+100:116:reApplyKey
+118:134:keyEnable
+136:149:getKeyById
+151:163:deleteKey
+165:181:applyToken
+183:199:tokenEnable
+201:218:myToken
+220:237:myTokenApprove
+
+
+/product/routers/application.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+45:61:apply
+63:79:openapiApply
+81:99:mySelf
+101:119:maybe
+121:134:getById
+136:148:delete
+150:166:update
+168:184:reApply
+186:199:getSecretKey
+201:213:newSecretKey
+215:231:enable
+233:250:myApprove
+
+
+/product/code/routers/apply.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+34:50:approve
+52:69:getApproveInfo
+
+
+/product/routers/logs.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+33:50:list
+
+
+/product/code/routers/application.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+45:61:apply
+63:79:openapiApply
+81:99:mySelf
+101:119:maybe
+121:134:getById
+136:148:delete
+150:166:update
+168:184:reApply
+186:199:getSecretKey
+201:213:newSecretKey
+215:231:enable
+233:250:myApprove
+
+
+/product/routers/ioa.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+34:37:token
+39:46:getStaff
+48:50:error
+52:54:ok
+
+
+/product/code/routers/logs.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+33:50:list
+
+```
+
+
+## go swagger (很少使用的框架)
+拿到这个项目，只需要，抽离出api 的规律，就能找到所有的api 函数。
+```yaml
+task_name: go_swagger_扫描测试
+
+mode:
+  - go
+
+go_mode_target_rule:
+  rule: 'true'
+
+func_rule:
+  - func_name: # v2 版本trpc
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 0
+          rules:
+    param_type:
+      rules:
+        - size: 0
+          rules:
+    return_type:
+      rules:
+        - size: 1
+          rules:
+            - 'beginStr("operations")'
+    recv_type:
+      rule: 'equal("*ApiManager")'
+    recv_name:
+      rule: 'equal("apiManager")'
+
+
+path:
+  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  deepsize: 10
+
+file:
+  rule: 'true'  # 默认已排除 test 文件和非 go 文件，无需额外配置
+```
+
+扫描结果:
+```text
+不存在filter
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientsGet.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+15:41:GetClientsGetHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetLoginEventPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+15:70:GetLoginEventGetApi
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/LoginPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+17:98:LoginPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadUserInfoPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+16:56:UploadUserInfoPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetFileReportPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+16:94:GetFileReportPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetVersionApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+10:16:GetVersionApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadLoginEventPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+14:69:UploadLoginEventApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/RegisterPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+15:67:RegisterPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadRdpEventPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+16:69:UploadRdpEventPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientIdPostApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+18:104:GetClientIdPostApiHandlerFunc
+
+
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetRulesGetApi.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+12:30:GetRulesGetHandlerFunc
+
+```
+这个是自己的项目中的api
+https://github.com/TSY244/augeu
+
+## trpc 腾讯开源的tpc 框架
+规则我是从https://github.com/trpc-group/trpc-cmdline/tree/main/install/protobuf/asset_go
+中提取出来。类似的这种使用工具生成的代码，都可以使用该项目准确定位到api
+```yaml
+task_name: trpc扫描测试
+
+mode:
+  - go
+
+go_mode_target_rule:
+  rule: 'true'
+
+func_rule:
+  - func_name: # v2 版本trpc
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 2
+          rules:
+            - 'equal("ctx")'
+            - 'equal("req")'
+    param_type:
+      rules:
+        - size: 2
+          rules:
+            - 'equal("context.Context")'
+            - 'beginStr("*pb.")'
+    return_type:
+      rules:
+        - size: 2
+          rules:
+            - 'beginStr("*pb.")'
+            - 'equal("error")'
+    recv_type:
+      rule: 'endStr("Impl")'
+    recv_name:
+      rule: "true"
+  - func_name: # v1 版本trpc
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 3
+          rules:
+            - 'equal("ctx")'
+            - 'equal("req")'
+            - 'equal("rsp")'
+    param_type:
+      rules:
+        - size: 3
+          rules:
+            - 'equal("context.Context")'
+            - 'beginStr("*pb.")'
+            - 'beginStr("*pb.")'
+    return_type:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("error")'
+    recv_type:
+      rule: 'endStr("Impl")'
+    recv_name:
+      rule: "true"
+  - func_name: # $method.ClientStreaming $method.ServerStreaming 和$method.ClientStreaming
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("stream")'
+    param_type:
+      rules:
+        - size: 1
+          rules:
+            - 'reg("_[^ ]+Server")'
+    return_type:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("error")'
+    recv_type:
+      rule: 'endStr("Impl")'
+    recv_name:
+      rule: "true"
+  - func_name: # $method.ServerStreaming
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 2
+          rules:
+            - 'equal("req")'
+            - 'equal("stream")'
+    param_type:
+      rules:
+        - size: 2
+          rules:
+            - 'beginStr("*pb.")'
+            - 'reg("_[^ ]+Server")'
+    return_type:
+      rules:
+        - size: 1
+          rules:
+            - 'equal("error")'
+    recv_type:
+      rule: 'endStr("Impl")'
+    recv_name:
+      rule: "true"
+
+
+path:
+  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  deepsize: 10
+
+file:
+  rule: 'true'  # 默认已排除 test 文件和非 go 文件，无需额外配置
+```
+
+扫描结果
+```text
+
+/product/code/go/.../internal/server/xxxx.go 中以下的函数可能存在越权漏洞
+开始行数:结尾行数:函数名字
+30:37:GetActList
+40:47:GetActInfo
+50:57:GetProdActList
+60:67:GetProdConfActList
+70:77:GetActUnconfProd
+80:87:GetActByLock
+90:97:GetCheckActCnt
+100:107:GetProdActSku
+110:117:AddAct
+120:127:OperateAct
+130:137:CopyAct
+140:147:ExcludeProduct
+150:157:AddActSku
+160:167:ActTimerJob
+170:177:GetMultiProdAct
+180:187:GetActSkuInfo
+190:207:SendBoxActNotifyMsg
+210:220:GetSkuStandardPercent
+223:233:CheckActSkuUpdate
+267:275:AdjustSkuBatchQuantity
+```
+
+
+# 其他尝试
+## 基于静态的鉴权扫描
+本质是找到鉴权框架之后，添加规则
+`!contain("CheckAuth")`
+如果扫描出的代码中不存在这个CheckAuth 那么就很有可能存在越权。
+
