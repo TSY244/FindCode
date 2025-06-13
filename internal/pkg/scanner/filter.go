@@ -3,6 +3,7 @@ package scanner
 import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/pkg/logger"
+	"errors"
 	"fmt"
 	"go/ast"
 )
@@ -245,4 +246,90 @@ func exprToString(expr ast.Expr) string {
 	default:
 		return fmt.Sprintf("%T", expr)
 	}
+}
+
+func checkRecv(decl *ast.FuncDecl) bool {
+	if decl.Recv == nil {
+		return false
+	}
+	if len(decl.Recv.List) != 1 {
+		return false
+	}
+	return true
+}
+
+func filterRecvName(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
+	if funcRule.RecvNameRule == nil {
+		return true, nil
+	}
+	if funcRule.RecvNameRule.Rule == "" {
+		return false, nil // 控制循环，并非真false
+	}
+
+	recvName, err := getRecvName(decl)
+	if err != nil {
+		return false, err
+	}
+	if ret, err := matchStr(funcRule.RecvNameRule.Rule, recvName); err != nil {
+		logger.Error(err)
+	} else if ret {
+		return true, nil
+	}
+	return false, nil
+}
+
+func filterRecvType(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
+	if funcRule.RecvTypeRule == nil {
+		return true, nil
+	}
+	if funcRule.RecvTypeRule.Rule == "" {
+		return false, nil // 控制循环，并非真false
+	}
+
+	recvType, err := getRecvType(decl)
+	if err != nil {
+		return false, err
+	}
+	if ret, err := matchStr(funcRule.RecvTypeRule.Rule, recvType); err != nil {
+		logger.Error(err)
+	} else if ret {
+		return true, nil
+	}
+	return false, nil
+}
+
+func getRecvName(decl *ast.FuncDecl) (string, error) {
+	if ret := checkRecv(decl); !ret {
+		return "", errors.New("receiver error")
+	}
+
+	if len(decl.Recv.List[0].Names) == 0 {
+		return "", errors.New("receiver error")
+	}
+	return decl.Recv.List[0].Names[0].Name, nil // go 默认值回有一个接受值
+}
+
+func getRecvType(decl *ast.FuncDecl) (string, error) {
+	if ret := checkRecv(decl); !ret {
+		return "", errors.New("receiver error")
+	}
+	recvType := decl.Recv.List[0].Type
+	if pType, ok := recvType.(*ast.SelectorExpr); ok {
+		if X, ok := pType.X.(*ast.Ident); ok {
+			return X.Name + "." + pType.Sel.Name, nil
+		}
+	}
+	// 针对项目特性，没有深度解析
+	if pType, ok := recvType.(*ast.StarExpr); ok {
+		if X, ok := pType.X.(*ast.SelectorExpr); ok {
+			if X2, ok := X.X.(*ast.Ident); ok {
+				return "*" + X2.Name + "." + X.Sel.Name, nil
+			}
+
+		}
+		if X, ok := pType.X.(*ast.Ident); ok {
+			return "*" + X.Name, nil
+		}
+	}
+	return "", errors.New("receiver error")
 }

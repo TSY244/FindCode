@@ -15,6 +15,16 @@ type FuncRuleUnit struct {
 	ParamNameRule  *ParamNameRule `mapstructure:"param_name"`
 	ParamTypeRule  *ParamTypeRule `mapstructure:"param_type"`
 	ReturnTypeRule *ReturnType    `mapstructure:"return_type"`
+	RecvTypeRule   *RecvTypeRule  `mapstructure:"recv_type"`
+	RecvNameRule   *RecvNameRule  `mapstructure:"recv_name"`
+}
+
+type RecvNameRule struct {
+	Rule string `mapstructure:"rule"`
+}
+
+type RecvTypeRule struct {
+	Rule string `mapstructure:"rule"`
 }
 
 type ReturnType struct {

@@ -18,4 +18,6 @@ func init() {
 	AddFilterFunc(filterParamType)
 	AddFilterFunc(filterParamName)
 	AddFilterFunc(filterReturn)
+	AddFilterFunc(filterRecvName)
+	AddFilterFunc(filterRecvType)
 }
