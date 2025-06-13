@@ -72,5 +72,3 @@ jobs:
           prerelease: false
           files: |
             FindCode-*-*
-            LICENSE
-            README.md
