@@ -1,3 +1,7 @@
+# todo
+- [ ] 完成命令行ai 模式
+- [ ] 完成 -f 参数模式
+
 # 简介
 
 该项目可以用于
@@ -362,7 +366,7 @@ file:
 这个是自己的项目中的api
 https://github.com/TSY244/augeu
 
-## trpc 腾讯开源的tpc 框架
+## trpc 腾讯开源的rpc 框架
 规则我是从https://github.com/trpc-group/trpc-cmdline/tree/main/install/protobuf/asset_go
 中提取出来。类似的这种使用工具生成的代码，都可以使用该项目准确定位到api
 ```yaml
@@ -508,7 +512,54 @@ file:
 
 # 其他尝试
 ## 基于静态的鉴权扫描
-本质是找到鉴权框架之后，添加规则
-`!contain("CheckAuth")`
-如果扫描出的代码中不存在这个CheckAuth 那么就很有可能存在越权。
+   本质是找到鉴权框架之后，添加规则
+   `!contain("CheckAuth")`
+   如果扫描出的代码中不存在这个CheckAuth 那么就很有可能存在越权。
+
+## 调用链输出-未实现
+
+## 恶意三方库引入
+
+
+# 使用
+## 命令行参数
+### 静态代码扫描逻辑
+1. 最简单的，通过制定项目是什么框架之后进行扫描
+
+   >  ./FindCode -l /product/path/  -r rule/find_trpc_api.yaml
+
+2. 使用手动指定框架类型
+
+   > ./FindCode -l /product/path/   -f gin/go_swagger/trpc
+
+3. 添加扫描目标逻辑
+
+   > ./FindCode -l /product/path/  -go_target 'contain("asdfasdf")'
+
+   可以在-go_target 添加更加具体的逻辑，表示的是搜寻
+
+### 结合ai 扫描
+1. 结合api代码+一层下游代码 询问大模型
+   > ./FindCode -ai true -l /product/path/ -r/-f data -prompt_file /Prompt.txt -ai_cycle num -o result.txt
+   
+   表示通过提供的Prompt 对每一个函数进行轮训 -prompt_file 表示提示词的文件的地址。
+
+   需要添加两个%s
+   第一个%s 表示api对应的code 源码
+   第二个%s 表示api 下游，一层被调用的函数code 源码
+
+   -ai_cycle 表示每一个函数询问的次数
+
+   -o 输出文件到result.txt
+
+
+2. 使用大模型询问，并得到结果，限定大模型返回bool
+   通过大模型返回的bool 类型判读api+下游代码是否满足要求
+   > ./FindCode -ai true -l /product/path/ -r/-f data -prompt_file /Prompt.txt -ai_cycle num -o result.txt -return_true true
+
+
+
+## docker 命令
+
+   
 
