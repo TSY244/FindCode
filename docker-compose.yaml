@@ -1,0 +1,8 @@
+services:
+  find_code:
+    build: .
+    ports:
+      - "18080:8000"
+    restart: always
+    environment:
+      - GIT_URL=${GIT_URL}  # 从外部环境变量读取

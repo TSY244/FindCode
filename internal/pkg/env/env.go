@@ -9,6 +9,7 @@ var (
 	ConfigPath string
 	RulePath   string
 	LogicDir   string
+	OutputFile string
 )
 
 var (

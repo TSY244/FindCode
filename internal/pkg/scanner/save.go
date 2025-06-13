@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/pkg/logger"
 	"bufio"
 	"fmt"
@@ -9,13 +10,26 @@ import (
 )
 
 func SaveToFile(taskName string) {
-	timestamp := fmt.Sprintf("%d", time.Now().Unix())
-	fileName := taskName + "_" + timestamp + ".txt"
+	resultDir := "result/"
+	err := os.MkdirAll(resultDir, os.ModePerm)
+	if err != nil {
+		return
+	}
+	var fileName string
+
+	if env.OutputFile != "" {
+		fileName = resultDir + env.OutputFile
+	} else {
+		timestamp := fmt.Sprintf("%d", time.Now().Unix())
+		fileName = resultDir + taskName + "_" + timestamp + ".txt"
+	}
+
 	file, err := os.Create(fileName)
 	if err != nil {
 		fmt.Printf("create file %s failed.\n", fileName)
 	}
 	defer file.Close()
+
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
 

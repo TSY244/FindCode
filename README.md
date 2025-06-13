@@ -559,7 +559,9 @@ file:
 
 
 
-## docker 命令
-
+## docker-compose 
+```
+ GIT_URL=https://github.com/TSY244/augeu.git  docker-compose up -d
+```
    
 

@@ -14,18 +14,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	git.woa.com/polaris/polaris-go/v2 v2.6.9 // indirect
-	git.woa.com/polaris/polaris-server-api/api/metric v1.0.2 // indirect
-	git.woa.com/polaris/polaris-server-api/api/monitor v1.0.8 // indirect
-	git.woa.com/polaris/polaris-server-api/api/v1/grpc v1.0.2 // indirect
-	git.woa.com/polaris/polaris-server-api/api/v1/model v1.2.5 // indirect
-	git.woa.com/polaris/polaris-server-api/api/v2/grpc v1.0.0 // indirect
-	git.woa.com/polaris/polaris-server-api/api/v2/model v1.0.7 // indirect
-	git.woa.com/sec-api/go/scurl v0.3.0 // indirect
-	git.woa.com/tgit/tgit-sdk-go/v2 v2.0.0-beta-7 // indirect
-	git.woa.com/trpc/trpc-protocol/pb/go/trpc v0.2.1 // indirect
-	git.woa.com/trpc/trpc-protocol/pb/go/trpc/mcp v0.0.0-20250611041516-024bff38992d // indirect
-	git.woa.com/trpc/trpc-protocol/pb/go/trpc/v2 v2.0.0-alpha // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
@@ -88,6 +76,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	trpc.tech/trpc-go/fbs/v2 v2.0.0-beta // indirect
-	trpc.tech/trpc-go/trpc-go-cmdline/v2 v2.8.44 // indirect
 )
