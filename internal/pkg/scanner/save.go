@@ -31,7 +31,7 @@ func SaveToFile(taskName string) {
 	}
 
 	for path, ret := range Result {
-		strMeg := fmt.Sprintf("\n\n%s 中以下的函数可能存在越权漏洞\n开始行数:结尾行数:函数名字\n", path)
+		strMeg := fmt.Sprintf("\n\n%s 扫描结果如下\n开始行数:结尾行数:函数名字\n", path)
 		_, err := writer.WriteString(strMeg)
 		if err != nil {
 			logger.Errorf("save file %s failed.\n", fileName)

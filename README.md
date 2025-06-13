@@ -56,7 +56,7 @@ file:
 
 ```text
 
-/product/code/routers/staff_key.go 中以下的函数可能存在越权漏洞
+/product/code/routers/staff_key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 40:61:apply
 63:84:reApply
@@ -68,7 +68,7 @@ file:
 200:222:decrypt
 
 
-/product/routers/staff_key.go 中以下的函数可能存在越权漏洞
+/product/routers/staff_key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 40:61:apply
 63:84:reApply
@@ -80,12 +80,12 @@ file:
 200:222:decrypt
 
 
-/product/routers/base_info.go 中以下的函数可能存在越权漏洞
+/product/routers/base_info.go 扫描结果如下
 开始行数:结尾行数:函数名字
 29:36:products
 
 
-/product/code/routers/service.go 中以下的函数可能存在越权漏洞
+/product/code/routers/service.go 扫描结果如下
 开始行数:结尾行数:函数名字
 47:63:apply
 65:83:mySelf
@@ -103,7 +103,7 @@ file:
 275:292:keyVersion
 
 
-/product/code/routers/ioa.go 中以下的函数可能存在越权漏洞
+/product/code/routers/ioa.go 扫描结果如下
 开始行数:结尾行数:函数名字
 34:37:token
 39:46:getStaff
@@ -111,13 +111,13 @@ file:
 52:54:ok
 
 
-/product/routers/apply.go 中以下的函数可能存在越权漏洞
+/product/routers/apply.go 扫描结果如下
 开始行数:结尾行数:函数名字
 34:50:approve
 52:69:getApproveInfo
 
 
-/product/routers/service.go 中以下的函数可能存在越权漏洞
+/product/routers/service.go 扫描结果如下
 开始行数:结尾行数:函数名字
 47:63:apply
 65:83:mySelf
@@ -135,7 +135,7 @@ file:
 275:292:keyVersion
 
 
-/product/routers/service_key.go 中以下的函数可能存在越权漏洞
+/product/routers/service_key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 44:60:keyApply
 62:79:keyList
@@ -150,7 +150,7 @@ file:
 220:237:myTokenApprove
 
 
-/product/routers/key.go 中以下的函数可能存在越权漏洞
+/product/routers/key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 43:59:create
 61:78:list
@@ -165,12 +165,12 @@ file:
 214:231:myApprove
 
 
-/product/code/routers/base_info.go 中以下的函数可能存在越权漏洞
+/product/code/routers/base_info.go 扫描结果如下
 开始行数:结尾行数:函数名字
 29:36:products
 
 
-/product/code/routers/key.go 中以下的函数可能存在越权漏洞
+/product/code/routers/key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 43:59:create
 61:78:list
@@ -185,7 +185,7 @@ file:
 214:231:myApprove
 
 
-/product/code/routers/service_key.go 中以下的函数可能存在越权漏洞
+/product/code/routers/service_key.go 扫描结果如下
 开始行数:结尾行数:函数名字
 44:60:keyApply
 62:79:keyList
@@ -200,7 +200,7 @@ file:
 220:237:myTokenApprove
 
 
-/product/routers/application.go 中以下的函数可能存在越权漏洞
+/product/routers/application.go 扫描结果如下
 开始行数:结尾行数:函数名字
 45:61:apply
 63:79:openapiApply
@@ -216,18 +216,18 @@ file:
 233:250:myApprove
 
 
-/product/code/routers/apply.go 中以下的函数可能存在越权漏洞
+/product/code/routers/apply.go 扫描结果如下
 开始行数:结尾行数:函数名字
 34:50:approve
 52:69:getApproveInfo
 
 
-/product/routers/logs.go 中以下的函数可能存在越权漏洞
+/product/routers/logs.go 扫描结果如下
 开始行数:结尾行数:函数名字
 33:50:list
 
 
-/product/code/routers/application.go 中以下的函数可能存在越权漏洞
+/product/code/routers/application.go 扫描结果如下
 开始行数:结尾行数:函数名字
 45:61:apply
 63:79:openapiApply
@@ -243,7 +243,7 @@ file:
 233:250:myApprove
 
 
-/product/routers/ioa.go 中以下的函数可能存在越权漏洞
+/product/routers/ioa.go 扫描结果如下
 开始行数:结尾行数:函数名字
 34:37:token
 39:46:getStaff
@@ -251,7 +251,7 @@ file:
 52:54:ok
 
 
-/product/code/routers/logs.go 中以下的函数可能存在越权漏洞
+/product/code/routers/logs.go 扫描结果如下
 开始行数:结尾行数:函数名字
 33:50:list
 
@@ -304,57 +304,57 @@ file:
 不存在filter
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientsGet.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientsGet.go 扫描结果如下
 开始行数:结尾行数:函数名字
 15:41:GetClientsGetHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetLoginEventPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetLoginEventPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 15:70:GetLoginEventGetApi
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/LoginPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/LoginPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 17:98:LoginPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadUserInfoPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadUserInfoPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 16:56:UploadUserInfoPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetFileReportPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetFileReportPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 16:94:GetFileReportPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetVersionApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetVersionApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 10:16:GetVersionApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadLoginEventPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadLoginEventPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 14:69:UploadLoginEventApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/RegisterPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/RegisterPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 15:67:RegisterPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadRdpEventPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/UploadRdpEventPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 16:69:UploadRdpEventPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientIdPostApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetClientIdPostApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 18:104:GetClientIdPostApiHandlerFunc
 
 
-/product/code/go/augeu/backEnd/internal/pkg/web/api/GetRulesGetApi.go 中以下的函数可能存在越权漏洞
+/product/code/go/augeu/backEnd/internal/pkg/web/api/GetRulesGetApi.go 扫描结果如下
 开始行数:结尾行数:函数名字
 12:30:GetRulesGetHandlerFunc
 
@@ -481,7 +481,7 @@ file:
 扫描结果
 ```text
 
-/product/code/go/.../internal/server/xxxx.go 中以下的函数可能存在越权漏洞
+/product/code/go/.../internal/server/xxxx.go 扫描结果如下
 开始行数:结尾行数:函数名字
 30:37:GetActList
 40:47:GetActInfo
