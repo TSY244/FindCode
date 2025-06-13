@@ -5,6 +5,7 @@ COPY . .
 RUN go mod tidy
 RUN go build -o FindCode cmd/main.go
 
+
 FROM alpine:latest
 RUN mkdir -p /app
 WORKDIR /app
