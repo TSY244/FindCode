@@ -19,6 +19,7 @@ func main() {
 
 	// 解析命令行参数，并且注册到"环境变量中"
 	env.CheckFlag()
+
 	conf, err := config.Init(env.ConfigPath)
 	if err != nil {
 		fmt.Println(err)
