@@ -1,0 +1,9 @@
+LogConf:
+  FileName: "logs/app.log"       # 日志文件路径
+  MaxSize: 100                  # 单个日志文件最大尺寸，单位MB
+  MaxBackups: 7                # 保留的旧日志文件数量
+  MaxAge: 30                   # 日志文件最大保存天数
+  Compress: true               # 是否压缩旧日志文件
+  Level: "info"               # 日志级别，debug模式
+  PrintToConsole: true         # 是否打印到控制台（彩色输出）
+
