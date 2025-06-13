@@ -9,6 +9,7 @@ func init() {
 	flag.StringVar(&ConfigPath, "c", "./etc/config.yaml", "-c ./etc/config.yaml")
 	flag.StringVar(&RulePath, "r", "./rule/rule.yaml", "-r ./etc/rule.yaml")
 	flag.StringVar(&LogicDir, "l", "./logic/", "-l ./logic/")
+
 	flag.Parse()
 }
 
