@@ -41,8 +41,8 @@ func_rule:
         - size: 3
           rules:
             - 'equal("context.Context")'
-            - 'beginStr("pb.")'
-            - 'beginStr("pb.")'
+            - 'beginStr("*pb.")'
+            - 'beginStr("*pb.")'
     return_type:
       rules:
         - size: 1
