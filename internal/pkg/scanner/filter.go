@@ -7,9 +7,7 @@ import (
 	"go/ast"
 )
 
-type FilterFunc func(decl *ast.FuncDecl, rule *rule.Rule) (bool, error)
-
-type filterRuleFunc func(*rule.FuncRuleUnit) (bool, error)
+type FilterFunc func(decl *ast.FuncDecl, rule *rule.FuncRuleUnit) (bool, error)
 
 type FilterFuncs []FilterFunc
 
@@ -22,119 +20,103 @@ func AddFilterFunc(taskFunc FilterFunc) {
 }
 
 func filter(decl *ast.FuncDecl, rule *rule.Rule) (bool, error) {
-	for _, filterFunc := range filterFuncs {
-		ret, err := filterFunc(decl, rule)
-		if err != nil {
-			return false, err
-		}
-		if !ret {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func filterBase(rule *rule.Rule, f filterRuleFunc) (bool, error) {
-	if rule.FuncRules == nil {
-		return true, nil
-	}
-	if len(rule.FuncRules) == 0 {
-		return true, nil
-	}
-	for _, unit := range rule.FuncRules {
-		if ret, err := f(&unit); err != nil {
-			return false, err
-		} else if ret {
-			return true, nil
+	for _, funcRule := range rule.FuncRules { // 遍历每一个func rule
+		for i, filterFunc := range filterFuncs {
+			ok, err := filterFunc(decl, &funcRule)
+			if err != nil {
+				return false, err
+			}
+			if !ok {
+				break
+			}
+			if i == len(filterFuncs)-1 {
+				return true, nil
+			}
 		}
 	}
 	return false, nil
 }
 
-func filterFuncName(decl *ast.FuncDecl, r *rule.Rule) (bool, error) {
-	return filterBase(r, func(funcRule *rule.FuncRuleUnit) (bool, error) {
-		if funcRule.FuncNameRule == nil {
-			return true, nil
-		}
-		if funcRule.FuncNameRule.Rule == "" {
-			return false, nil // 控制循环，并非真false
-		}
+func filterFuncName(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
+	if funcRule.FuncNameRule == nil {
+		return true, nil
+	}
+	if funcRule.FuncNameRule.Rule == "" {
+		return false, nil // 控制循环，并非真false
+	}
 
-		if ret, err := matchStr(funcRule.FuncNameRule.Rule, decl.Name.Name); err != nil {
-			logger.Error(err)
-		} else if ret {
-			return true, nil
-		}
-		return false, nil
-	})
+	if ret, err := matchStr(funcRule.FuncNameRule.Rule, decl.Name.Name); err != nil {
+		logger.Error(err)
+	} else if ret {
+		return true, nil
+	}
+	return false, nil
+
 }
 
-func filterParamType(decl *ast.FuncDecl, r *rule.Rule) (bool, error) {
+func filterParamType(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
 
-	return filterBase(r, func(funcRule *rule.FuncRuleUnit) (bool, error) {
-		if funcRule.ParamTypeRule == nil || funcRule.ParamTypeRule.Rule == nil {
+	if funcRule.ParamTypeRule == nil || funcRule.ParamTypeRule.Rule == nil {
+		return true, nil
+	}
+	if len(funcRule.ParamTypeRule.Rule) == 0 {
+		return true, nil
+	}
+	params, err := getFuncParamTypes(decl)
+	if err != nil {
+		return false, err
+	}
+	for _, paramUnit := range funcRule.ParamTypeRule.Rule {
+		if paramUnit.Size == -1 {
 			return true, nil
 		}
-		if len(funcRule.ParamTypeRule.Rule) == 0 {
-			return true, nil
+		if len(params) != paramUnit.Size {
+			continue
 		}
-		for _, paramUnit := range funcRule.ParamTypeRule.Rule {
-
-			params, err := getFuncParamTypes(decl)
-			if err != nil {
+		if paramUnit.Rules != nil {
+			if ret, err := matchStrSplice(params, paramUnit.Rules); err != nil {
 				return false, err
-			}
-			if paramUnit.Size == -1 {
+			} else if ret {
 				return true, nil
 			}
-			if len(params) != paramUnit.Size {
-				continue
-			}
-			if paramUnit.Rules != nil {
-				if ret, err := matchStrSplice(params, paramUnit.Rules); err != nil {
-					return false, err
-				} else if ret {
-					return true, nil
-				}
-			} else { // 没有规则直接返回
-				return true, nil
-			}
+		} else { // 没有规则直接返回
+			return true, nil
 		}
-		return false, nil
-	})
+	}
+	return false, nil
+
 }
 
-func filterParamName(decl *ast.FuncDecl, r *rule.Rule) (bool, error) {
-	return filterBase(r, func(funcRule *rule.FuncRuleUnit) (bool, error) {
-		if funcRule.ParamNameRule == nil || funcRule.ParamNameRule.Rule == nil {
+func filterParamName(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
+	if funcRule.ParamNameRule == nil || funcRule.ParamNameRule.Rule == nil {
+		return true, nil
+	}
+	if len(funcRule.ParamNameRule.Rule) == 0 {
+		return true, nil
+	}
+	names, err := getFuncParamNames(decl)
+	if err != nil {
+		return false, err
+	}
+	for _, paramUnit := range funcRule.ParamNameRule.Rule {
+		if paramUnit.Size == -1 {
 			return true, nil
 		}
-		if len(funcRule.ParamNameRule.Rule) == 0 {
-			return true, nil
+		if len(names) != paramUnit.Size {
+			continue
 		}
-		for _, paramUnit := range funcRule.ParamNameRule.Rule {
-			names, err := getFuncParamNames(decl)
-			if err != nil {
+		if paramUnit.Rules != nil {
+			if ret, err := matchStrSplice(names, paramUnit.Rules); err != nil {
 				return false, err
-			}
-			if paramUnit.Size == -1 {
+			} else if ret {
 				return true, nil
 			}
-			if len(names) != paramUnit.Size {
-				continue
-			}
-			if paramUnit.Rules != nil {
-				if ret, err := matchStrSplice(names, paramUnit.Rules); err != nil {
-					return false, err
-				} else if ret {
-					return true, nil
-				}
-			} else {
-				return true, nil
-			}
+		} else {
+			return true, nil
 		}
-		return false, nil
-	})
+	}
+	return false, nil
+
 }
 
 func getFuncParamTypes(funcDecl *ast.FuncDecl) ([]string, error) {
@@ -190,38 +172,36 @@ func getParamNames(param *ast.Field) ([]string, error) {
 // 1. size
 // 2. return type
 
-func filterReturn(decl *ast.FuncDecl, r *rule.Rule) (bool, error) {
-	return filterBase(r, func(funcRule *rule.FuncRuleUnit) (bool, error) {
-		if funcRule.ReturnTypeRule == nil || funcRule.ReturnTypeRule.Rules == nil {
+func filterReturn(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
+	if funcRule.ReturnTypeRule == nil || funcRule.ReturnTypeRule.Rules == nil {
+		return true, nil
+	}
+	if len(funcRule.ReturnTypeRule.Rules) == 0 {
+		return true, nil
+	}
+	for _, unit := range funcRule.ReturnTypeRule.Rules {
+		types, err := getReturnTypes(decl)
+		if err != nil {
+			return false, err
+		}
+		if unit.Size == -1 {
 			return true, nil
 		}
-		if len(funcRule.ReturnTypeRule.Rules) == 0 {
-			return true, nil
+
+		if len(types) != unit.Size {
+			continue
 		}
-		for _, unit := range funcRule.ReturnTypeRule.Rules {
-			types, err := getReturnTypes(decl)
-			if err != nil {
+		if unit.Rules != nil {
+			if ret, err := matchStrSplice(types, unit.Rules); err != nil {
 				return false, err
-			}
-			if unit.Size == -1 {
+			} else if ret {
 				return true, nil
 			}
-
-			if len(types) != unit.Size {
-				continue
-			}
-			if unit.Rules != nil {
-				if ret, err := matchStrSplice(types, unit.Rules); err != nil {
-					return false, err
-				} else if !ret {
-					return false, nil
-				}
-			}
+		} else {
 			return true, nil
 		}
-		return false, nil
-	})
-
+	}
+	return false, nil
 }
 
 // getReturnTypes 获取返回值

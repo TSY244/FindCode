@@ -77,7 +77,7 @@ func_rule:
       rules:
         - size: 2
           rules:
-            - 'beginStr("pb.")'
+            - 'beginStr("*pb.")'
             - 'reg("_[^ ]+Server")'
     return_type:
       rules:

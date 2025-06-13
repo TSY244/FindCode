@@ -48,10 +48,7 @@ func Scan(path string, target *rule.Rule) error {
 			return err
 		}
 	}
-	// 在下面对每一个 ast.FuncDecl 处理
-	//if err := processFuncDecls(target); err != nil {
-	//	return err
-	//}
+
 	SaveToFile(target.TaskName)
 	printResult(Result)
 	logger.Info("模块已经扫描结束")
@@ -145,7 +142,6 @@ func strModeFunc(path string, r *rule.Rule) error {
 }
 
 func goModeFunc(path string, target *rule.Rule) error {
-
 	err := processFile(path, target)
 	if err != nil {
 		return err
