@@ -1,4 +1,4 @@
-name: Auto Release Windows Binaries
+name: Auto Release FindCode
 
 on:
   push:
@@ -37,6 +37,13 @@ jobs:
     strategy:
       matrix:
         goarch: ["386", "amd64", "arm64"]
+        include:
+          - goos: windows
+            ext: .exe
+          - goos: linux
+            ext:
+          - goos: darwin
+            ext:
 
     steps:
       - uses: actions/checkout@v4
@@ -46,22 +53,24 @@ jobs:
         with:
           go-version: '1.23.8'
 
-      - name: Build Windows binary
+      - name: Build binaries
         env:
-          GOOS: windows
+          GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          go build -o ./FindCode-${{ env.GOARCH }}.exe ./cmd/main.go
+          OUTPUT="FindCode-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          go build -o $OUTPUT ./cmd/main.go
+          echo "OUTPUT_FILE=$OUTPUT" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.check-commit.outputs.release-tag }}
           name: "Release ${{ needs.check-commit.outputs.release-tag }}"
-          body: "Automated Windows build for ${{ needs.check-commit.outputs.release-tag }}"
+          body: "Automated multi-platform build for ${{ needs.check-commit.outputs.release-tag }}"
           draft: false
           prerelease: false
           files: |
-            FindCode-${{ matrix.goarch }}.exe
+            FindCode-*-*
             LICENSE
             README.md
