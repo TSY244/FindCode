@@ -37,4 +37,5 @@ func main() {
 	if err := scanner.Scan(env.LogicDir, &r); err != nil {
 		logger.Fatal(err)
 	}
+
 }
