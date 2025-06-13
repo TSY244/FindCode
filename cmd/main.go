@@ -34,8 +34,16 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	loadEnv(&r) // 加载环境变量
+
 	if err := scanner.Scan(env.LogicDir, &r); err != nil {
 		logger.Fatal(err)
 	}
 
+}
+
+func loadEnv(r *rule.Rule) {
+	if env.GoTarget != "" {
+		r.GoModeTargetRule.Rule = env.GoTarget
+	}
 }

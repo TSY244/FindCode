@@ -10,6 +10,7 @@ var (
 	RulePath   string
 	LogicDir   string
 	OutputFile string
+	GoTarget   string
 )
 
 var (

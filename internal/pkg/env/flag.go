@@ -10,6 +10,7 @@ func init() {
 	flag.StringVar(&RulePath, "r", "./rule/rule.yaml", "-r ./etc/rule.yaml")
 	flag.StringVar(&LogicDir, "l", "./logic/", "-l ./logic/")
 	flag.StringVar(&OutputFile, "o", "", "-o ./output/")
+	flag.StringVar(&GoTarget, "go_target", "", "-t ./")
 	flag.Parse()
 }
 
