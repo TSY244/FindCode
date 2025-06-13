@@ -1,0 +1,36 @@
+task_name: go_swagger_扫描测试
+
+mode:
+  - go
+
+go_mode_target_rule:
+  rule: 'true'
+
+func_rule:
+  - func_name: # v2 版本trpc
+      rule: 'beginWithUpper()'
+    param_name:
+      rules:
+        - size: 0
+          rules:
+    param_type:
+      rules:
+        - size: 0
+          rules:
+    return_type:
+      rules:
+        - size: 1
+          rules:
+            - 'beginStr("operations")'
+    recv_type:
+      rule: 'equal("*ApiManager")'
+    recv_name:
+      rule: 'equal("apiManager")'
+
+
+path:
+  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  deepsize: 10
+
+file:
+  rule: 'true'  # 默认已排除 test 文件和非 go 文件，无需额外配置
