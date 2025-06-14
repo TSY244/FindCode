@@ -296,7 +296,7 @@ func_rule:
 
 
 path:
-  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  rule: 'true' # 可在此添加目录规则，如 'contain("router")'
   deepsize: 10
 
 file:
@@ -475,7 +475,7 @@ func_rule:
 
 
 path:
-  rule: 'true' # 可在此添加目录规则，如 'contain("service")'
+  rule: 'true' # 可在此添加目录规则，如 'contain("router")'
   deepsize: 10
 
 file:

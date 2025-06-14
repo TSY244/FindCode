@@ -6,7 +6,7 @@ import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils"
+	"ScanIDOR/pkg/utils/util"
 	"fmt"
 	"time"
 )
@@ -30,7 +30,7 @@ func main() {
 
 	// 加载rule
 	var r rule.Rule
-	if err := utils.LoadYaml(env.RulePath, &r); err != nil {
+	if err := util.LoadYaml(env.RulePath, &r); err != nil {
 		logger.Fatal(err)
 	}
 

@@ -60,7 +60,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: |
           OUTPUT="FindCode-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -o $OUTPUT ./cmd/main.go
+          go build -o $OUTPUT ./cmd/cmd.go
           echo "OUTPUT_FILE=$OUTPUT" >> $GITHUB_ENV
 
       - name: Create Release

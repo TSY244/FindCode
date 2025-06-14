@@ -2,7 +2,7 @@ package scanner
 
 import (
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils"
+	"ScanIDOR/pkg/utils/util"
 	"go/ast"
 	"go/token"
 )
@@ -31,7 +31,7 @@ func savaNoApiFunc(decl *ast.FuncDecl, srcStr string, fset *token.FileSet) {
 // saveApiFunc 保存api 函数
 func saveApiFunc(filePath, srcStr string,
 	decl *ast.FuncDecl, fset *token.FileSet) error {
-	code, err := utils.Compress([]byte(getFuncCode(srcStr, decl)))
+	code, err := util.Compress([]byte(getFuncCode(srcStr, decl)))
 	if err != nil {
 		logger.Errorf("在处理api 函数的时候，保存错误")
 		return err

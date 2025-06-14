@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>扫描结果</title>
+  <style>
+    .result-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: #f9f9f9;
+    }
+    .result-header {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .result-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .result-list li {
+      padding: 8px 12px;
+      margin: 5px 0;
+      background: #fff;
+      border-left: 3px solid #3498db;
+    }
+  </style>
+</head>
+<body>
+<h1>{{.msg}}</h1>
+
+{{range $key, $values := .result}}
+<div class="result-card">
+  <h2 class="result-header">路由: {{$key}}</h2>
+  <ul class="result-list">
+    {{range $values}}
+    <li>{{.}}</li>
+    {{end}}
+  </ul>
+</div>
+{{end}}
+</body>
+</html>

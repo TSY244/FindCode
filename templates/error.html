@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>错误信息</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .error-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: #f9f9f9;
+        }
+        .error-header {
+            color: #2c3e50;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .error-message {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #fff;
+            border-left: 3px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+<h1>{{.msg}}</h1>
+{{if .go.error}}
+<div class="error-card">
+    <h2 class="error-header">Go 错误信息</h2>
+    <p class="error-message">{{.go.error}}</p>
+</div>
+{{end}}
+</body>
+</html>

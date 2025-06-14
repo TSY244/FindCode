@@ -3,7 +3,7 @@ package scanner
 import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils"
+	"ScanIDOR/pkg/utils/util"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -222,7 +222,7 @@ func processFuncDecls(rule *rule.Rule) error {
 func processApi(api cacheUnit, rule *rule.Rule, path string) ([]string, error) {
 	//debug
 	idors := make([]string, 0)
-	funcCode, err := utils.Decompress(api.Code)
+	funcCode, err := util.Decompress(api.Code)
 	if err != nil {
 		return nil, err
 	}
