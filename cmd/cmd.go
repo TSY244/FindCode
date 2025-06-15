@@ -1,12 +1,12 @@
 package main
 
 import (
-	"ScanIDOR/internal/pkg/config"
+	"ScanIDOR/internal/config"
 	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils/util"
+	"ScanIDOR/utils/util"
 	"fmt"
 	"time"
 )

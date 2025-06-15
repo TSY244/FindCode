@@ -1,7 +1,7 @@
 package env
 
 import (
-	"ScanIDOR/internal/pkg/config"
+	"ScanIDOR/internal/config"
 	"ScanIDOR/internal/pkg/rule"
 )
 
@@ -17,3 +17,11 @@ var (
 	CoreRule *rule.Rule
 	CoreConf *config.Config
 )
+
+var (
+	Env = map[string]string{}
+)
+
+//func init() {
+//	//EnvMap = make(map[string]string)
+//}

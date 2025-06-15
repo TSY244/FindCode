@@ -1,18 +1,20 @@
 # 定义变量
 BINARY_NAME := FindCode
-SERVER_NAME := server
+SERVER_NAME := FindCodeServer
 DOCKER_IMAGE := mergechen/findcode
 GIT_URL :=  # 可通过 make run GIT_URL=<your-url> 传入
+BUILD_DIR := .
+DIST_DIR := dist
+COVERAGE_FILE := coverage.out
 
-.PHONY: build_cmd run docker-build docker-up clean  build_server
+.PHONY: build_cmd run docker-build docker-up docker-down clean build_server run_server
 
 # 1. 编译 Go 项目 (cmd/cmd.go)
 build_cmd:
 	@echo "正在编译 Go 项目..."
-	go build -o $(BINARY_NAME) ./cmd/cmd.go
-	@echo "编译完成，生成可执行文件: $(BINARY_NAME)"
-
-
+	@mkdir -p $(BUILD_DIR)
+	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/cmd.go
+	@echo "编译完成，生成可执行文件: $(BUILD_DIR)/$(BINARY_NAME)"
 
 # 2. 执行 run_cmd.sh（需传入 GIT_URL 参数或环境变量）
 run:
@@ -41,19 +43,31 @@ docker-up:
 	@echo "服务已启动（端口映射: 18080:8000）"
 
 docker-down:
-	@echo "停止 docker-compsoe 服务..."
+	@echo "停止 docker-compose 服务..."
 	docker-compose down
-	@echo "暂停成功!"
+	@echo "服务已停止!"
 
-# 清理生成的文件
+# 5. 清理生成的文件
 clean:
-	@rm -f $(BINARY_NAME)
-	@echo "已清理可执行文件"
+	@echo "开始清理项目..."
+	@rm -rf $(BUILD_DIR) $(DIST_DIR) $(COVERAGE_FILE)
+	@rm -f $(BINARY_NAME) $(SERVER_NAME)
+	@docker-compose down -v --remove-orphans 2>/dev/null || true
+	@docker rmi $(DOCKER_IMAGE) 2>/dev/null || true
+	@go clean -cache -testcache -modcache
+	@echo "清理完成!"
 
-
-#  编译 Go server 项目 (cmd/server.go)
+# 6. 编译 Go server 项目 (cmd/server.go)
 build_server:
-	@echo "正在编译 Go 项目..."
-	go build -o $(SERVER_NAME) ./cmd/server.go
-	@echo "编译完成，生成可执行文件: $(BINARY_NAME)"
+	@echo "正在编译 Go server 项目..."
+	@mkdir -p $(BUILD_DIR)
+	go build -o $(BUILD_DIR)/$(SERVER_NAME) ./cmd/server.go
+	@echo "编译完成，生成可执行文件: $(BUILD_DIR)/$(SERVER_NAME)"
 
+run_server:
+	@echo "正在编译 Go server 项目..."
+	@mkdir -p $(BUILD_DIR)
+	go build -o $(BUILD_DIR)/$(SERVER_NAME) ./cmd/server.go
+	@echo "编译完成，生成可执行文件: $(BUILD_DIR)/$(SERVER_NAME)"
+	@echo "正在启动 Go server 项目..."
+	@$(BUILD_DIR)/$(SERVER_NAME)

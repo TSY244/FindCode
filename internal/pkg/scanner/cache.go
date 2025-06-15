@@ -2,7 +2,7 @@ package scanner
 
 import (
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils/util"
+	"ScanIDOR/utils/util"
 	"go/ast"
 	"go/token"
 )

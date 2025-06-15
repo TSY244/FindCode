@@ -3,7 +3,7 @@ package scanner
 import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/utils/util"
+	"ScanIDOR/utils/util"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -340,8 +340,8 @@ func processNameDecl(name string, rule *rule.Rule, path string) (bool, error) {
 			} else if ret { // 发现该层没有目标的函数，将会向下查询调用
 				hashValue = GetFuncAstHash(unit.FuncAst)
 				JudgedCache[hashValue] = true
-				//startLine, endLine := getStartAndEndLine(api.Fset, api.FuncAst)
-				//result := fmt.Sprintf("%d:%d:%s", startLine, endLine, api.FuncAst.Name.Name)
+				//startLine, endLine := getStartAndEndLine(controllers.Fset, controllers.FuncAst)
+				//result := fmt.Sprintf("%d:%d:%s", startLine, endLine, controllers.FuncAst.Name.Name)
 				//idors = append(idors, result)
 				subRet, err := processFuncDecl(path, unit.FuncAst, rule)
 				if err != nil {

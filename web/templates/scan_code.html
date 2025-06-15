@@ -14,12 +14,17 @@
 <p>输入一个公开的 Git 仓库 URL，系统将分析 <code>/api</code> 目录下的所有 Go 文件，并列出其中可能存在越权漏洞的公共函数。</p>
 <form action="/scan" method="post">
     <label>
-        <input type="text" name="gitUrl" placeholder="例如: https://github.com/gin-gonic/gin.git" required>
+        token: <input type="text" name="token" placeholder="例如: "><br>
     </label>
     <label>
-        <input type="text" name="type" placeholder="例如: gin/go_swagger/trpc" required>
+        gitUrl:<input type="text" name="gitUrl" placeholder="例如: https://github.com/gin-gonic/gin.git" required><br>
     </label>
-    <input type="submit" value="开始扫描">
+    <label>
+        type:  <input type="text" name="type" placeholder="例如: gin/go_swagger/trpc" required><br>
+    </label>
+    <label>
+        <input type="submit" value="开始扫描">
+    </label>
 </form>
 </body>
 </html>
