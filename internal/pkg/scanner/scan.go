@@ -498,8 +498,29 @@ func aiScan() error {
 				} else {
 					logger.Infof("api: %s 不存在风险,reson is %s\"", api.FuncAst.Name.Name, jsonRet.Reason)
 				}
+
+				// 添加到ai result
+				if resultMap, ok := AiResult[path]; ok {
+					if units, ok2 := resultMap[api.FuncAst.Name.Name]; ok2 {
+						units = append(units, Unit{
+							Result: jsonRet.Result,
+							Reason: jsonRet.Reason,
+						})
+						resultMap[api.FuncAst.Name.Name] = units
+					}
+				} else {
+					AiResult[path] = map[string][]Unit{
+						api.FuncAst.Name.Name: {
+							Unit{
+								Result: jsonRet.Result,
+								Reason: jsonRet.Reason,
+							},
+						},
+					}
+				}
 			}
 		}
 	}
+	SaveAiResult()
 	return nil
 }

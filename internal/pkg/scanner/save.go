@@ -61,3 +61,34 @@ func SaveToFile(taskName string) {
 	}
 	logger.Infof("save file %s success.", fileName)
 }
+
+func SaveAiResult() {
+	resultDir := "ai_result/"
+	err := os.MkdirAll(resultDir, os.ModePerm)
+	if err != nil {
+		return
+	}
+	for path, aiResult := range AiResult {
+		for funcName, units := range aiResult {
+			timestamp := fmt.Sprintf("%d", time.Now().Unix())
+			fileName := resultDir + funcName + "_" + timestamp + ".txt"
+			file, err := os.Create(fileName)
+			if err != nil {
+				logger.Errorf("save file %s failed.\n", fileName)
+			}
+			defer file.Close()
+			writer := bufio.NewWriter(file)
+			defer writer.Flush()
+			var msg string
+			msg = path + " 结果如下:\n" + "funcName: " + funcName + "\n"
+			for i, unit := range units {
+				prefix := fmt.Sprintf("ai第%d次结果: \n", i)
+				msg += prefix + "result: " + unit.Result + "\n" + "reason: " + unit.Reason + "\n\n"
+			}
+			_, err = writer.WriteString(msg)
+			if err != nil {
+				logger.Errorf("save file %s failed.\n", fileName)
+			}
+		}
+	}
+}

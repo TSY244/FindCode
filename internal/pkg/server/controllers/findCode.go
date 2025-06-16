@@ -26,6 +26,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	// 返回一个结果html 用于展示结果
 	gitUrl := c.PostForm("gitUrl")
 	scanType := c.PostForm("type")
+	isUseAi := c.PostForm("isUseAi")
 
 	rulePath, ok := consts.TypeMap[scanType]
 	if !ok {
