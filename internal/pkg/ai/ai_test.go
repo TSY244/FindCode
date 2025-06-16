@@ -24,7 +24,7 @@ func TestRequest(t *testing.T) {
 		logger.Error(err)
 		return
 	}
-	aiSk := sysEnv.GetEnv("env.api_sk")
+	aiSk := sysEnv.GetEnv("ai_sk")
 	params := map[string]string{
 		"env.api_sk": aiSk,
 		"msg":        "请你计算1+1 是否等于2，结果请用纯json 字符串。不带md 格式",

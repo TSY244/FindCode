@@ -23,4 +23,7 @@ var (
 
 	// modeCache 存放扫描模式
 	modeCache = make(map[string]struct{})
+
+	// AiResult 存放ai 扫描结果
+	AiResult = make(map[string]AiResultUnit) // path -> funcName -> result
 )

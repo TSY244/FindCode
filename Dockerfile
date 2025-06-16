@@ -1,34 +1,41 @@
-# 第一阶段：构建应用
-FROM golang:1.23.1-alpine as builder
+# Use Go 1.21 as the base image for building
+FROM golang:1.23-alpine AS builder
 
-# 设置环境变量
-ENV GOPROXY=https://goproxy.cn
-ENV CGO_ENABLED=1
-ENV GOOS=linux
-ENV GOARCH=amd64
+# Install necessary C libraries and tools
+RUN apk add --no-cache gcc musl-dev sqlite
 
-# 安装必要的依赖
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-
+# Set the working directory
 WORKDIR /build
+
+# Set Go proxy
+RUN go env -w GOPROXY=https://goproxy.cn,direct
+
+# Copy the Go module files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
 COPY . .
 
-# 下载依赖并构建应用
-RUN go mod tidy
-RUN go build -o FindCodeServer cmd/server.go
+# Build the application with CGO enabled
+RUN CGO_ENABLED=1 GOOS=linux go build -o FindCodeServer  cmd/server.go
 
-# 第二阶段：创建运行时镜像
+# Use a minimal base image for the final container
 FROM alpine:latest
 
-# 安装 SQLite 运行时依赖
-RUN apk add --no-cache sqlite-libs
+# Install sqlite3 for runtime
+RUN apk add --no-cache sqlite
 
-RUN mkdir -p /app
 WORKDIR /app
-
+COPY --from=builder /build/FindCodeServer .
 COPY --from=builder /build/etc etc/
 COPY --from=builder /build/rule rule/
 COPY --from=builder /build/web web/
-COPY --from=builder /build/FindCodeServer .
 
-ENTRYPOINT ["./FindCodeServer"]
+# Expose the necessary ports
+EXPOSE 8080
+
+# Run the application
+CMD ["./FindCodeServer"]

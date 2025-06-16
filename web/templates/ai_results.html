@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI 扫描结果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: #f9f9f9;
+        }
+        .result-header {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .function-card {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .function-name {
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 10px;
+        }
+        .unit-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f8f8;
+            border-left: 3px solid #3498db;
+        }
+        .result-text {
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .reason-text {
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+<h1>{{.msg}}</h1>
+
+{{range $path, $aiResultUnit := .result}}
+<div class="result-card">
+    <h2 class="result-header">路径: {{$path}}</h2>
+
+    {{range $funcName, $units := $aiResultUnit}}
+    <div class="function-card">
+        <div class="function-name">函数: {{$funcName}}</div>
+
+        {{range $unit := $units}}
+        <div class="unit-item">
+            <div class="result-text">结果: {{$unit.Result}}</div>
+            <div class="reason-text">原因: {{$unit.Reason}}</div>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+{{end}}
+</body>
+</html>

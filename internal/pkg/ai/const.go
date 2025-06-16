@@ -1,5 +1,5 @@
 package ai
 
 const (
-	AiSkEnv = "env.api_sk"
+	AiSkEnv = "ai_sk"
 )

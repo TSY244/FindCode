@@ -13,7 +13,7 @@ COVERAGE_FILE := coverage.out
 build_cmd:
 	@echo "正在编译 Go 项目..."
 	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/cmd.go
+	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/cli.go
 	@echo "编译完成，生成可执行文件: $(BUILD_DIR)/$(BINARY_NAME)"
 
 # 2. 执行 run_cmd.sh（需传入 GIT_URL 参数或环境变量）
