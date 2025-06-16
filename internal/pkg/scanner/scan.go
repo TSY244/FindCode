@@ -1,15 +1,28 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/pkg/ai"
+	"ScanIDOR/internal/pkg/ai/prompt"
+	"ScanIDOR/internal/pkg/ai/request"
+	"ScanIDOR/internal/pkg/ai/respose"
+	result2 "ScanIDOR/internal/pkg/ai/result"
+	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/pkg/rule"
+	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
+	"ScanIDOR/pkg/sysEnv"
+	"ScanIDOR/pkg/template"
 	"ScanIDOR/utils/util"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"gopkg.in/yaml.v3"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 type modeFunc func(path string, target *rule.Rule) error
@@ -23,9 +36,9 @@ var (
 	isUsedGoMode = false
 )
 
-func Scan(path string, target *rule.Rule) error {
-	if target == nil {
-		return errors.New("target is nil")
+func Scan(path string, r *rule.Rule) error {
+	if r == nil {
+		return errors.New("r is nil")
 	}
 	info, err := checkFileStatue(path)
 	if err != nil {
@@ -33,31 +46,37 @@ func Scan(path string, target *rule.Rule) error {
 	}
 	// 根据文件类型启动不同的扫描逻辑
 	if info.IsDir() {
-		if err := dealDir(path, target, BeginLevel); err != nil {
+		if err := dealDir(path, r, BeginLevel); err != nil {
 			return err
 		}
 	} else {
-		if err := dealFile(path, target); err != nil {
+		if err := dealFile(path, r); err != nil {
 			return err
 		}
 	}
-	// 发现存在go mode 才会进行go 的扫描
-	if ret := isUseMode(target); ret {
+	if isUseMode(r, GoMode) {
 		isUsedGoMode = true
-		if err := processFuncDecls(target); err != nil {
+		if err := processFuncDecls(r); err != nil {
 			return err
 		}
 	}
 
-	SaveToFile(target.TaskName)
+	// 判断是否使用ai mode
+	if isUseMode(r, AiMode) {
+		if err := aiScan(); err != nil {
+			return err
+		}
+	}
+
+	SaveToFile(r.TaskName)
 	printResult(Result)
 	logger.Info("模块已经扫描结束")
 	return nil
 }
 
-func isUseMode(target *rule.Rule) bool {
-	for _, r := range target.Mode {
-		if r == GoMode {
+func isUseMode(rule *rule.Rule, target string) bool {
+	for _, r := range rule.Mode {
+		if r == target {
 			return true
 		}
 	}
@@ -82,13 +101,7 @@ func dealDir(path string, target *rule.Rule, deep int) error {
 			}
 		} else {
 			filePath := filepath.Join(path, file.Name())
-			//if target.Path.Rule != "" {
-			//	if ret, err := matchStr(target.Path.Rule, filePath); err != nil {
-			//		return err
-			//	} else if !ret {
-			//		continue
-			//	}
-			//}
+
 			if err := dealFile(filePath, target); err != nil {
 				return err
 			}
@@ -108,6 +121,9 @@ func dealFile(path string, target *rule.Rule) error {
 	}
 
 	for _, mode := range target.Mode {
+		if mode == AiMode {
+			continue
+		}
 		f, ok := ModeFuncMap[mode]
 		if !ok {
 			logger.Warn("不存在mode: ", mode)
@@ -371,4 +387,118 @@ func scanDecls(asts []ast.Decl, f func(decl *ast.FuncDecl)) {
 			f(funcDecl)
 		}
 	}
+}
+
+// 获取当前func 底层的被调用者的函数
+func getAllSubCode(decl *ast.FuncDecl, path string) ([]string, error) {
+	subDecl, names := getAllSubFuncDecls(decl, path)
+	var allSubCode []string
+	for _, sub := range subDecl {
+		funcCode := getFuncCode(path, &sub)
+		if funcCode == "" {
+			continue
+		}
+		allSubCode = append(allSubCode, funcCode)
+	}
+	for _, name := range names {
+		if units, ok := CodeCache[name]; ok {
+			for _, unit := range units {
+				allSubCode = append(allSubCode, string(unit.Code))
+			}
+		}
+	}
+	return allSubCode, nil
+}
+
+func aiScan() error {
+	for path, apis := range apiCache {
+		for _, api := range apis {
+			funcCode, err := util.Decompress(api.Code)
+			if err != nil {
+				return err
+			}
+
+			allSubCodes, err := getAllSubCode(api.FuncAst, path)
+			if err != nil {
+				return err
+			}
+			var allSubCode string
+			for i, code := range allSubCodes {
+				if len(allSubCode) >= 500 {
+					break
+				}
+				allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i)
+				allSubCode += fmt.Sprintf("%s\n\n", code)
+			}
+			totalPrompt := fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
+			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+
+			content, err := os.ReadFile(env.AiConfigPath)
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+
+			aiSk := sysEnv.GetEnv(ai.AiSkEnv)
+			params := map[string]string{
+				"env.api_sk": aiSk,
+				"msg":        "",
+				"system":     "",
+			}
+			source := template.NewTemplate(string(content), params)
+			source.Load()
+			result, err := source.Replace()
+			if err != nil {
+				logger.Error(err)
+				return err
+			}
+			var r request.ChatRequest
+			if err = yaml.Unmarshal([]byte(result), &r); err != nil {
+				logger.Error(err)
+				return err
+			}
+
+			var deepseekreq request.DeepseekReq
+			if err := json.Unmarshal([]byte(r.Body), &deepseekreq); err != nil {
+				logger.Error(err)
+			}
+			var msgs []request.DeepseekMessage
+			msgs = append(msgs, request.DeepseekMessage{
+				Role:    "system",
+				Content: prompt.JsonSystem,
+			})
+			msgs = append(msgs, request.DeepseekMessage{
+				Role:    "user",
+				Content: totalPrompt,
+			})
+			deepseekreq.Messages = msgs
+
+			jsonBody, err := json.Marshal(deepseekreq)
+			if err != nil {
+				logger.Error(err)
+			}
+
+			//body := fmt.Sprintf(r.Body, prompt.JsonSystem, totalPrompt)
+			r.Body = string(jsonBody)
+			for i := 0; i < env.AiCycle; i++ {
+				var ret respose.DeepseekResp
+				err = r.Send(&ret)
+				if err != nil {
+					logger.Fatal(err)
+				}
+				jsonData := utils.ExtractJSON(ret.GetChatContent())
+				var jsonRet result2.JsonResult
+				if err = yaml.Unmarshal([]byte(jsonData), &jsonRet); err != nil {
+					logger.Error(err)
+					return err
+				}
+				if jsonRet.Result == "true" {
+					logger.Infof("api: %s 存在风险,reson is %s", api.FuncAst.Name.Name, jsonRet.Reason)
+				} else {
+					logger.Infof("api: %s 不存在风险,reson is %s\"", api.FuncAst.Name.Name, jsonRet.Reason)
+				}
+			}
+		}
+	}
+	return nil
 }

@@ -186,6 +186,9 @@ func getFuncCode(srcStr string, decl *ast.FuncDecl) string {
 	start := decl.Pos()
 	end := decl.End()
 	var funcCode string
+	if len(srcStr) < int(start) {
+		return ""
+	}
 	if int(end) < len(srcStr) {
 		funcCode = srcStr[start:end]
 	} else {

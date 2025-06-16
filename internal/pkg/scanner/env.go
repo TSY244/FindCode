@@ -11,6 +11,7 @@ var (
 
 	// cacheUnit 用于存放api 的地方
 	apiCache = make(Cache)
+
 	//JudgedCache 判断过的缓存，有鉴权框架返回存放false
 	JudgedCache = make(map[string]bool)
 
@@ -19,4 +20,7 @@ var (
 
 	// nameJudgedCache 有鉴权框架返回存放false
 	nameJudgedCache = make(map[string]bool)
+
+	// modeCache 存放扫描模式
+	modeCache = make(map[string]struct{})
 )

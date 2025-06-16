@@ -20,4 +20,5 @@ const (
 const (
 	StrMode string = "str"
 	GoMode  string = "go"
+	AiMode  string = "ai"
 )

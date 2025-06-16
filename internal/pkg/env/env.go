@@ -6,11 +6,14 @@ import (
 )
 
 var (
-	ConfigPath string
-	RulePath   string
-	LogicDir   string
-	OutputFile string
-	GoTarget   string
+	ConfigPath   string
+	RulePath     string
+	LogicDir     string
+	OutputFile   string
+	GoTarget     string
+	AiCycle      int
+	AiConfigPath string
+	AiMode       bool
 )
 
 var (

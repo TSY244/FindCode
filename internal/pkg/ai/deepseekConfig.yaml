@@ -8,8 +8,9 @@ body: >
   {
     "model": "deepseek-chat",
     "messages": [
-      {"role": "system", "content": "%s"},
-      {"role": "user", "content": "%s"} 
+      {"role": "system", "content": "{{system}}"},
+      {"role": "user", "content": "{{msg}}"} 
     ],
     "stream": false
   }
+  

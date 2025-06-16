@@ -17,6 +17,10 @@ func LoadYaml[T any](filePath string, data *T) error {
 	viper.AddConfigPath(path)
 	viper.SetConfigType("yaml")
 
+	// 解析yaml
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
 	if err := viper.Unmarshal(data); err != nil {
 		return err
 	}

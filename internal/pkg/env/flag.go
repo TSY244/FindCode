@@ -11,6 +11,9 @@ func init() {
 	flag.StringVar(&LogicDir, "l", "./logic/", "-l ./logic/")
 	flag.StringVar(&OutputFile, "o", "", "-o ./output/")
 	flag.StringVar(&GoTarget, "go_target", "", "-t ./")
+	flag.IntVar(&AiCycle, "ai_cycle", 3, "-ai_cycle 3")
+	flag.StringVar(&AiConfigPath, "ai_config", "./etc/deepseekConfig.yaml", "-ai_config ./etc/deepseekConfig.yaml")
+	flag.BoolVar(&AiMode, "ai", false, "-ai true")
 	flag.Parse()
 }
 

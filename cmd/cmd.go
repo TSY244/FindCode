@@ -46,4 +46,7 @@ func loadEnv(r *rule.Rule) {
 	if env.GoTarget != "" {
 		r.GoModeTargetRule.Rule = env.GoTarget
 	}
+	if env.AiMode == true {
+		r.Mode = append(r.Mode, scanner.AiMode)
+	}
 }
