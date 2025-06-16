@@ -396,6 +396,7 @@ func getAllSubCode(decl *ast.FuncDecl, path string) ([]string, error) {
 	for _, sub := range subDecl {
 		funcCode := getFuncCode(path, &sub)
 		if funcCode == "" {
+
 			continue
 		}
 		allSubCode = append(allSubCode, funcCode)
