@@ -73,7 +73,7 @@
 <body>
 <h1>Go API 潜在漏洞扫描器</h1>
 <p>输入一个公开的 Git 仓库 URL，系统将分析 <code>/api</code> 目录下的所有 Go 文件，并列出其中可能存在越权漏洞的公共函数。</p>
-<form action="/scan" method="post">
+<form action="/findCode/scan" method="post">
     <div class="form-group">
         <label for="token">Token:</label>
         <input type="text" id="token" name="token" placeholder="例如: your_access_token">
@@ -90,7 +90,7 @@
     </div>
     <div class="form-group">
         <label for="isUseAi">isUseAi:</label>
-        <input type="checkbox" id="isUseAi" name="isUseAi">
+        <input type="checkbox" id="isUseAi" name="isUseAi" value="true">
     </div>
 
     <div class="form-group">

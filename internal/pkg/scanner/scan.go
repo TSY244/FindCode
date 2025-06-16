@@ -414,6 +414,8 @@ func getAllSubCode(decl *ast.FuncDecl, path string) ([]string, error) {
 func aiScan() error {
 	for path, apis := range apiCache {
 		for _, api := range apis {
+			repeatNum := 0
+			maxRepeatNum := 3
 			funcCode, err := util.Decompress(api.Code)
 			if err != nil {
 				return err
@@ -442,9 +444,9 @@ func aiScan() error {
 
 			aiSk := sysEnv.GetEnv(ai.AiSkEnv)
 			params := map[string]string{
-				"env.api_sk": aiSk,
-				"msg":        "",
-				"system":     "",
+				"ai_sk":  aiSk,
+				"msg":    "",
+				"system": "",
 			}
 			source := template.NewTemplate(string(content), params)
 			source.Load()
@@ -485,19 +487,21 @@ func aiScan() error {
 				var ret respose.DeepseekResp
 				err = r.Send(&ret)
 				if err != nil {
-					logger.Fatal(err)
+					logger.Error(err)
+					return err
 				}
 				jsonData := utils.ExtractJSON(ret.GetChatContent())
 				var jsonRet result2.JsonResult
 				if err = yaml.Unmarshal([]byte(jsonData), &jsonRet); err != nil {
 					logger.Error(err)
-					return err
+					continue
 				}
-				if jsonRet.Result == "true" {
-					logger.Infof("api: %s 存在风险,reson is %s", api.FuncAst.Name.Name, jsonRet.Reason)
-				} else {
-					logger.Infof("api: %s 不存在风险,reson is %s\"", api.FuncAst.Name.Name, jsonRet.Reason)
+				if jsonRet.Result != "true" && jsonRet.Result != "false" && repeatNum < maxRepeatNum {
+					repeatNum++
+					i -= 1
+					continue
 				}
+				logger.Debug(jsonRet.Result)
 
 				// 添加到ai result
 				if resultMap, ok := AiResult[path]; ok {

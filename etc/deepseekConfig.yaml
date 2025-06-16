@@ -2,7 +2,7 @@ method: POST
 url: https://api.deepseek.com/chat/completions
 headers:
   Content-Type: application/json
-  Authorization: Bearer {{env.api_sk}} # 将会从env 获取
+  Authorization: Bearer {{ai_sk}} # 将会从env 获取
 
 body: >
   {

@@ -51,6 +51,8 @@ const (
 
 
 
-最后再确定一遍，不需要在输出的时候展示思考过程，只需要返回json
+最后再确定一遍，不需要在输出的时候展示思考过程，只需要返回json。
+result 是bool 返回true/false
+reason 是string 返回原因
 `
 )

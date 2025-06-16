@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type FindCodeController struct {
@@ -56,6 +57,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 		})
 		return
 	}
+	time.Sleep(2 * time.Second) // 给本地加载文件留时间
 
 	var r rule.Rule
 	if err := util2.LoadYaml(rulePath, &r); err != nil {
@@ -67,6 +69,17 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 		return
 	}
 
+	if isUseAi == "true" {
+		for i, m := range r.Mode {
+			if m == scanner.AiMode {
+				break
+			}
+			if len(r.Mode)-1 == i {
+				r.Mode = append(r.Mode, scanner.AiMode)
+			}
+		}
+	}
+
 	if err := scanner.Scan(clonePath, &r); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 			"msg":      "扫描失败",
@@ -76,6 +89,14 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 
 	defer os.RemoveAll(clonePath)
+
+	if isUseAi == "true" {
+		c.HTML(http.StatusOK, "ai_results.html", gin.H{
+			"msg":    "扫描成功",
+			"result": scanner.AiResult,
+		})
+		return
+	}
 
 	c.HTML(http.StatusOK, "results.html", gin.H{
 		"msg":    "扫描成功",
