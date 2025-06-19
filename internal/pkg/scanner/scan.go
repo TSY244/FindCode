@@ -1,28 +1,15 @@
 package scanner
 
 import (
-	"ScanIDOR/internal/pkg/ai"
-	"ScanIDOR/internal/pkg/ai/prompt"
-	"ScanIDOR/internal/pkg/ai/request"
-	"ScanIDOR/internal/pkg/ai/respose"
-	result2 "ScanIDOR/internal/pkg/ai/result"
-	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/pkg/rule"
-	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/sysEnv"
-	"ScanIDOR/pkg/template"
 	"ScanIDOR/utils/util"
 	"errors"
 	"fmt"
-	"github.com/goccy/go-json"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"gopkg.in/yaml.v3"
-	"os"
 	"path/filepath"
-	"strings"
 )
 
 type modeFunc func(path string, target *rule.Rule) error
@@ -396,7 +383,6 @@ func getAllSubCode(decl *ast.FuncDecl, path string) ([]string, error) {
 	for _, sub := range subDecl {
 		funcCode := getFuncCode(path, &sub)
 		if funcCode == "" {
-
 			continue
 		}
 		allSubCode = append(allSubCode, funcCode)
@@ -409,122 +395,4 @@ func getAllSubCode(decl *ast.FuncDecl, path string) ([]string, error) {
 		}
 	}
 	return allSubCode, nil
-}
-
-func aiScan() error {
-	for path, apis := range apiCache {
-		for _, api := range apis {
-			repeatNum := 0
-			maxRepeatNum := 3
-			funcCode, err := util.Decompress(api.Code)
-			if err != nil {
-				return err
-			}
-
-			allSubCodes, err := getAllSubCode(api.FuncAst, path)
-			if err != nil {
-				return err
-			}
-			var allSubCode string
-			for i, code := range allSubCodes {
-				if len(allSubCode) >= 500 {
-					break
-				}
-				allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i)
-				allSubCode += fmt.Sprintf("%s\n\n", code)
-			}
-			totalPrompt := fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
-
-			content, err := os.ReadFile(env.AiConfigPath)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-
-			aiSk := sysEnv.GetEnv(ai.AiSkEnv)
-			params := map[string]string{
-				"ai_sk":  aiSk,
-				"msg":    "",
-				"system": "",
-			}
-			source := template.NewTemplate(string(content), params)
-			source.Load()
-			result, err := source.Replace()
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			var r request.ChatRequest
-			if err = yaml.Unmarshal([]byte(result), &r); err != nil {
-				logger.Error(err)
-				return err
-			}
-
-			var deepseekreq request.DeepseekReq
-			if err := json.Unmarshal([]byte(r.Body), &deepseekreq); err != nil {
-				logger.Error(err)
-			}
-			var msgs []request.DeepseekMessage
-			msgs = append(msgs, request.DeepseekMessage{
-				Role:    "system",
-				Content: prompt.JsonSystem,
-			})
-			msgs = append(msgs, request.DeepseekMessage{
-				Role:    "user",
-				Content: totalPrompt,
-			})
-			deepseekreq.Messages = msgs
-
-			jsonBody, err := json.Marshal(deepseekreq)
-			if err != nil {
-				logger.Error(err)
-			}
-
-			//body := fmt.Sprintf(r.Body, prompt.JsonSystem, totalPrompt)
-			r.Body = string(jsonBody)
-			for i := 0; i < env.AiCycle; i++ {
-				var ret respose.DeepseekResp
-				err = r.Send(&ret)
-				if err != nil {
-					logger.Error(err)
-					return err
-				}
-				jsonData := utils.ExtractJSON(ret.GetChatContent())
-				var jsonRet result2.JsonResult
-				if err = yaml.Unmarshal([]byte(jsonData), &jsonRet); err != nil {
-					logger.Error(err)
-					continue
-				}
-				if jsonRet.Result != "true" && jsonRet.Result != "false" && repeatNum < maxRepeatNum {
-					repeatNum++
-					i -= 1
-					continue
-				}
-				logger.Debug(jsonRet.Result)
-
-				// 添加到ai result
-				if resultMap, ok := AiResult[path]; ok {
-					if units, ok2 := resultMap[api.FuncAst.Name.Name]; ok2 {
-						units = append(units, Unit{
-							Result: jsonRet.Result,
-							Reason: jsonRet.Reason,
-						})
-						resultMap[api.FuncAst.Name.Name] = units
-					}
-				} else {
-					AiResult[path] = map[string][]Unit{
-						api.FuncAst.Name.Name: {
-							Unit{
-								Result: jsonRet.Result,
-								Reason: jsonRet.Reason,
-							},
-						},
-					}
-				}
-			}
-		}
-	}
-	SaveAiResult()
-	return nil
 }
