@@ -7,6 +7,7 @@ import (
 	"ScanIDOR/utils/util"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // 使用gin 搭建后段
@@ -26,6 +27,8 @@ func main() {
 		panic(err)
 	}
 	initToken()
+	go clearDir()
+
 	a.Run()
 }
 
@@ -39,4 +42,22 @@ func initToken() {
 	}
 	defer file.Close()
 	_, err = file.WriteString(token)
+}
+
+func clearDir() {
+	// 获取当前文件目录下的所有的文件夹
+	files, err := os.ReadDir(".")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			// 删除文件夹
+			if strings.HasPrefix(file.Name(), "git-clone-") {
+				os.RemoveAll(file.Name())
+			}
+		}
+	}
+
 }

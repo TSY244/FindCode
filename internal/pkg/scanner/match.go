@@ -7,16 +7,6 @@ func matchStr(rule, target string) (bool, error) {
 }
 
 func matchStrSplice(targets, rules []string) (bool, error) {
-	//for i, target := range targets {
-	//	ret, err := matchStr(rules[i], target)
-	//	if err != nil {
-	//		return false, err
-	//	}
-	//	if !ret {
-	//		return false, nil
-	//	}
-	//}
-	//toalRet := false
 	for i, rule := range rules {
 		if len(targets) <= i {
 			return true, nil

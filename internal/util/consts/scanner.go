@@ -1,4 +1,4 @@
-package scanner
+package consts
 
 const (
 	ArgsSize   = 2
@@ -21,4 +21,11 @@ const (
 	StrMode string = "str"
 	GoMode  string = "go"
 	AiMode  string = "ai"
+)
+
+// 用于传参数
+const (
+	IsUseCtxKey     = "isUseCtx"
+	AiConfigKey     = "aiConfig"
+	IsReturnBoolKey = "isReturnBool"
 )

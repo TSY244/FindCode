@@ -1,17 +1,20 @@
 package scanner
 
-import "ScanIDOR/pkg/ruleEng"
+import (
+	"ScanIDOR/internal/util/consts"
+	"ScanIDOR/pkg/ruleEng"
+)
 
 // 这里设置 注册是无感的
 func init() {
 	// 注册规则引擎的处理函数
-	ruleEng.InitFuncMap(ContainFunc, Contain)
-	ruleEng.InitFuncMap(BeginStrFunc, BeginStr)
-	ruleEng.InitFuncMap(EndStrFunc, EndStr)
-	ruleEng.InitFuncMap(RegFunc, Reg)
-	ruleEng.InitFuncMap(EqualFunc, Equal)
-	ruleEng.InitFuncMap(BeginWithLower, BeginWithLowerCase)
-	ruleEng.InitFuncMap(BeginWithUpper, BeginWithUpperCase)
+	ruleEng.InitFuncMap(consts.ContainFunc, Contain)
+	ruleEng.InitFuncMap(consts.BeginStrFunc, BeginStr)
+	ruleEng.InitFuncMap(consts.EndStrFunc, EndStr)
+	ruleEng.InitFuncMap(consts.RegFunc, Reg)
+	ruleEng.InitFuncMap(consts.EqualFunc, Equal)
+	ruleEng.InitFuncMap(consts.BeginWithLower, BeginWithLowerCase)
+	ruleEng.InitFuncMap(consts.BeginWithUpper, BeginWithUpperCase)
 
 	// 注册默认的task 处理逻辑
 	AddFilterFunc(filterFuncName)

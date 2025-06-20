@@ -1,8 +1,13 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/config"
+	"ScanIDOR/internal/pkg/ai"
+	"ScanIDOR/internal/pkg/rule"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/color"
 	"ScanIDOR/pkg/logger"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -198,7 +203,7 @@ func getFuncCode(srcStr string, decl *ast.FuncDecl) string {
 }
 
 // printResult 打印结果
-func printResult(ret map[string][]string) {
+func printResult(ret map[string][]string, env *Env) {
 	if strModeFlag {
 		color.Magenta("该项目存在filter\n\n")
 	} else {
@@ -214,7 +219,7 @@ func printResult(ret map[string][]string) {
 		logger.Infoln("go mode没有扫描出结果！")
 		return
 	}
-	for filePath, ret := range Result {
+	for filePath, ret := range env.Result {
 		//logger.Warn(filePath + " 的文件可能存在的越权漏洞如下：")
 		color.HRed(filePath + " 的文件可能存在的越权漏洞如下：\n")
 		allSize += len(ret)
@@ -225,4 +230,63 @@ func printResult(ret map[string][]string) {
 		fmt.Println()
 	}
 	logger.Infof("函数个数: %d", allSize)
+}
+
+// LoadCtx 暂时只负责处理ai scan 的传参问题
+func LoadCtx(ctx context.Context, r *rule.Rule) {
+	isUseCtx, ok := ctx.Value(consts.IsUseCtxKey).(bool)
+	if !ok {
+		return
+	}
+	if !isUseCtx { // 当不使用ctx 说明是cli 模式。
+		if config.CoreConfig == nil || config.CoreConfig.AiConfig == nil {
+			return
+		}
+		r.AiConfig = config.CoreConfig.AiConfig
+		return
+	}
+	aiConFig, ok := ctx.Value(consts.AiConfigKey).(*ai.Config)
+	if ok {
+		r.AiConfig = aiConFig
+	}
+
+}
+
+func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnit) {
+	if strings.HasPrefix(clonePath, "./") {
+		clonePath = strings.Replace(clonePath, "./", "", 1)
+	}
+	locker.RLock()
+	defer locker.RUnlock()
+	ret := make(map[string][]string)
+	boolRet := make(map[string]AiBoolResultUnit)
+	for k, v := range env.Result {
+		if strings.HasPrefix(k, clonePath) {
+			ret[k] = v
+		}
+	}
+	for k, v := range env.AiBoolResult {
+		if strings.HasPrefix(k, clonePath) {
+			boolRet[k] = v
+		}
+	}
+	return &ret, &boolRet
+}
+
+func ClearResult(clonePath string, env *Env) {
+	if strings.HasPrefix(clonePath, "./") {
+		clonePath = strings.Replace(clonePath, "./", "", 1)
+	}
+	locker.Lock()
+	defer locker.Unlock()
+	for k := range env.Result {
+		if strings.HasPrefix(k, clonePath) {
+			delete(env.Result, k)
+		}
+	}
+	for k := range env.AiBoolResult {
+		if strings.HasPrefix(k, clonePath) {
+			delete(env.AiBoolResult, k)
+		}
+	}
 }

@@ -3,8 +3,10 @@ package controllers
 import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
+	"ScanIDOR/internal/pkg/server/dtos/requests"
 	"ScanIDOR/internal/pkg/server/services"
 	"ScanIDOR/internal/util/consts"
+	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
 	util2 "ScanIDOR/utils/util"
 	"github.com/gin-gonic/gin"
@@ -25,9 +27,19 @@ func NewFindCodeController(findCodeService services.FindCodeService) *FindCodeCo
 func (f *FindCodeController) Scan(c *gin.Context) {
 	// 接受一个git url
 	// 返回一个结果html 用于展示结果
-	gitUrl := c.PostForm("gitUrl")
-	scanType := c.PostForm("type")
-	isUseAi := c.PostForm("isUseAi")
+	var request requests.APIScanRequest
+	if err := c.ShouldBind(&request); err != nil {
+		// 若绑定失败，返回错误响应
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "表单数据解析失败",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	gitUrl := request.GitURL
+	scanType := request.Type
+	isUseAi := request.IsUseAi
 
 	rulePath, ok := consts.TypeMap[scanType]
 	if !ok {
@@ -59,6 +71,10 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 	time.Sleep(2 * time.Second) // 给本地加载文件留时间
 
+	defer func() {
+		os.RemoveAll(clonePath)
+	}()
+
 	var r rule.Rule
 	if err := util2.LoadYaml(rulePath, &r); err != nil {
 		logger.Fatal(err)
@@ -68,19 +84,36 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 		})
 		return
 	}
+	//ctx := context.WithValue(context.Background(), consts.IsUseCtxKey, false)
 
-	if isUseAi == "true" {
+	if isUseAi {
 		for i, m := range r.Mode {
-			if m == scanner.AiMode {
+			if m == consts.AiMode {
 				break
 			}
 			if len(r.Mode)-1 == i {
-				r.Mode = append(r.Mode, scanner.AiMode)
+				r.Mode = append(r.Mode, consts.AiMode)
 			}
 		}
+		aiConfig, err := utils.GetAiConfig(request.Model)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+				"msg":      "aiConfig 出错：" + rulePath,
+				"go.error": "",
+			})
+			return
+		}
+		r.AiConfig = aiConfig
+		r.AiConfig.IsUseAiPrompt = request.IsUseAiPrompt
+		if request.IsUseAiPrompt {
+			r.AiConfig.IsReturnBool = request.IsReturnBool
+		}
+		r.AiConfig.Prompt = request.AiPrompt
 	}
 
-	if err := scanner.Scan(clonePath, &r); err != nil {
+	env := scanner.NewEnv()
+
+	if err := scanner.Scan(clonePath, &r, env); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 			"msg":      "扫描失败",
 			"go.error": err.Error(),
@@ -88,19 +121,20 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 		return
 	}
 
-	defer os.RemoveAll(clonePath)
+	ret, boolRet := scanner.GetResult(clonePath, env)
 
-	if isUseAi == "true" {
+	if isUseAi {
 		c.HTML(http.StatusOK, "ai_results.html", gin.H{
-			"msg":    "扫描成功",
-			"result": scanner.AiResult,
+			"msg":          "扫描成功",
+			"result":       boolRet,
+			"isReturnBool": !request.IsUseAiPrompt || request.IsReturnBool,
 		})
 		return
 	}
 
 	c.HTML(http.StatusOK, "results.html", gin.H{
 		"msg":    "扫描成功",
-		"result": scanner.Result, // 传递结果给模板
+		"result": ret, // 传递结果给模板
 	})
 
 }

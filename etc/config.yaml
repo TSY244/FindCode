@@ -7,3 +7,19 @@ LogConf:
   Level: "info"               # 日志级别，debug模式
   PrintToConsole: true         # 是否打印到控制台（彩色输出）
 
+AiConf:
+  model: deepseek-chat
+  method: POST
+  url: https://api.deepseek.com/chat/completions
+  headers:
+    Content-Type: application/json
+    Authorization: Bearer %s # 将会从env 获取，不能删除这个占位符
+
+  body: >
+    {
+      "model": "deepseek-chat",
+      "messages": [
+  
+      ],
+      "stream": false
+    }

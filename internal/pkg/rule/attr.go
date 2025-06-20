@@ -1,5 +1,7 @@
 package rule
 
+import "ScanIDOR/internal/pkg/ai"
+
 type Rule struct {
 	TaskName          string         `mapstructure:"task_name"`
 	GoModeTargetRule  TargetRule     `mapstructure:"go_mode_target_rule"`
@@ -8,6 +10,7 @@ type Rule struct {
 	File              File           `mapstructure:"file"`
 	FuncRules         []FuncRuleUnit `mapstructure:"func_rule"`
 	Mode              []string       `mapstructure:"mode"`
+	AiConfig          *ai.Config
 }
 
 type FuncRuleUnit struct {

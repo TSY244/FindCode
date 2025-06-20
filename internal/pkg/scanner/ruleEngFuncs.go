@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/util/consts"
 	"fmt"
 	"regexp"
 	"strings"
@@ -8,7 +9,7 @@ import (
 
 func base(f func(args ...interface{}) (interface{}, error),
 	args ...interface{}) (interface{}, error) {
-	if ArgsSize != len(args) {
+	if consts.ArgsSize != len(args) {
 		return false, ArgsSizeNotEqualErr
 	}
 	return f(args...)

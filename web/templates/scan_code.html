@@ -2,100 +2,235 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Go API 漏洞扫描器</title>
-    <style>
-        .scan-form {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            font-family: Arial, sans-serif;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        neutral: {
+                            100: '#F5F7FA',
+                            200: '#E4E7ED',
+                            300: '#C0C4CC',
+                            400: '#909399',
+                            500: '#606266',
+                            600: '#303133',
+                            700: '#1E1E1E',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+                    }
+                }
+            }
         }
-
-        .form-title {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        .form-group input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-
-        .form-group input[type="text"]:focus {
-            border-color: #4285f4;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(66,133,244,0.2);
-        }
-
-        .submit-btn {
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.3s;
-        }
-
-        .submit-btn:hover {
-            background-color: #3367d6;
-        }
-
-        ::placeholder {
-            color: #aaa;
-            opacity: 1;
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .tooltip-trigger {
+                position: relative;
+            }
+            .tooltip-content {
+                @apply invisible absolute z-50 bg-neutral-700 text-white text-sm rounded py-2 px-3 shadow-lg opacity-0 transition-all duration-200 w-max max-w-xs;
+            }
+            .tooltip-trigger:hover .tooltip-content {
+                @apply visible opacity-100;
+            }
+            .tooltip-content::after {
+                content: "";
+                @apply absolute border-4;
+            }
+            .tooltip-top::after {
+                @apply top-full left-1/2 -ml-2 border-t-neutral-700 border-r-transparent border-b-transparent border-l-transparent;
+            }
+            .form-input-focus {
+                @apply ring-2 ring-primary/30 border-primary;
+            }
+            .checkbox-primary {
+                @apply h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary;
+            }
         }
     </style>
-
 </head>
-<body>
-<h1>Go API 潜在漏洞扫描器</h1>
-<p>输入一个公开的 Git 仓库 URL，系统将分析 <code>/api</code> 目录下的所有 Go 文件，并列出其中可能存在越权漏洞的公共函数。</p>
-<form action="/findCode/scan" method="post">
-    <div class="form-group">
-        <label for="token">Token:</label>
-        <input type="text" id="token" name="token" placeholder="例如: your_access_token">
+<body class="bg-neutral-100 min-h-screen font-inter">
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="mb-8 text-center">
+        <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-neutral-700 mb-3">Go API 潜在漏洞扫描器</h1>
+        <p class="text-neutral-500 text-lg">输入一个公开的 Git 仓库 URL，系统将分析 <code class="bg-neutral-200 px-1 py-0.5 rounded text-sm">/api</code> 目录下的所有 Go 文件，并列出其中可能存在越权漏洞的公共函数。</p>
     </div>
 
-    <div class="form-group">
-        <label for="gitUrl">Git URL:</label>
-        <input type="text" id="gitUrl" name="gitUrl" placeholder="例如: https://github.com/gin-gonic/gin.git" required>
-    </div>
+    <div class="bg-white rounded-xl shadow-card p-6 md:p-8 transition-all duration-300 hover:shadow-hover">
+        <form id="scanForm" action="/findCode/scan" method="post" class="space-y-6">
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label for="token" class="block text-sm font-medium text-neutral-700 mb-1">Token</label>
+                    <input type="text" id="token" name="token" placeholder="例如: your_access_token"
+                           class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
+                </div>
 
-    <div class="form-group">
-        <label for="type">Type:</label>
-        <input type="text" id="type" name="type" placeholder="例如: gin/go_swagger/trpc" required>
-    </div>
-    <div class="form-group">
-        <label for="isUseAi">isUseAi:</label>
-        <input type="checkbox" id="isUseAi" name="isUseAi" value="true">
-    </div>
+                <div class="form-group">
+                    <label for="gitUrl" class="block text-sm font-medium text-neutral-700 mb-1">Git URL</label>
+                    <input type="text" id="gitUrl" name="gitUrl" placeholder="例如: https://github.com/gin-gonic/gin.git" required
+                           class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
+                </div>
 
-    <div class="form-group">
-        <input type="submit" class="submit-btn" value="开始扫描">
+                <div class="form-group">
+                    <label for="type" class="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                    <input type="text" id="type" name="type" placeholder="例如: gin/go_swagger/trpc" required
+                           class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center cursor-pointer">
+                        <span class="text-sm font-medium text-neutral-700 mr-2">是否使用ai</span>
+                        <span class="tooltip-trigger inline-flex items-center">
+                                <i class="fa fa-question-circle text-primary"></i>
+                                <span class="tooltip-content tooltip-top">是否使用AI进行代码分析</span>
+                            </span>
+                        <input type="checkbox" id="isUseAi" name="isUseAi" value="true" class="checkbox-primary ml-2">
+                    </label>
+                </div>
+
+                <!-- 新增的AI模型选择下拉框 -->
+                <div id="aiModelSelectGroup" class="form-group hidden">
+                    <label for="aiModel" class="block text-sm font-medium text-neutral-700 mb-1">AI模型</label>
+                    <div class="relative">
+                        <select id="aiModel" name="aiModel" class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all appearance-none">
+                            <option value="deepseek-chat">deepseek-chat</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-500">
+                            <i class="fa fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 新增的AI提示按钮组 -->
+                <div id="aiPromptButtonGroup" class="form-group hidden">
+                    <label class="flex items-center cursor-pointer">
+                        <span class="text-sm font-medium text-neutral-700 mr-2">是否使用自己的提示词</span>
+                        <span class="tooltip-trigger inline-flex items-center">
+                                <i class="fa fa-question-circle text-primary"></i>
+                                <span class="tooltip-content tooltip-top">是否使用自己的提示词</span>
+                            </span>
+                        <input type="checkbox" id="isUseAiPrompt" name="isUseAiPrompt" value="true" class="checkbox-primary ml-2">
+                    </label>
+                </div>
+
+                <!-- 新增的AI提示输入框组 -->
+                <div id="aiPromptGroup" class="form-group hidden">
+                    <label class="flex items-center cursor-pointer mb-1">
+                        <span class="text-sm font-medium text-neutral-700 mr-2">AI提示词</span>
+                        <span class="tooltip-trigger inline-flex items-center">
+                                <i class="fa fa-question-circle text-primary"></i>
+                                <span class="tooltip-content tooltip-top">需要两个%s 第一个用于存放api的code 第二个存放在api中被调用的函数</span>
+                            </span>
+                    </label>
+                    <input type="text" id="aiPrompt" name="aiPrompt"
+                           placeholder="输入AI分析提示词"
+                           title="需要两个%s 第一个用于存放api的code 第二个存放在api中被调用的函数"
+                           class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
+                    <div class="mt-1 text-xs text-neutral-500 flex items-center">
+                        <i class="fa fa-info-circle mr-1 text-primary"></i>
+                        <span>提示词格式说明：需要包含两个%s占位符，第一个用于存放API的代码，第二个用于存放API中被调用的函数</span>
+                    </div>
+                </div>
+
+                <!-- 新增的isReturnBool按钮组 -->
+                <div id="isReturnBoolGroup" class="form-group hidden">
+                    <label class="flex items-center cursor-pointer">
+                        <span class="text-sm font-medium text-neutral-700 mr-2">是否可以只返回布尔值</span>
+                        <span class="tooltip-trigger inline-flex items-center">
+                                <i class="fa fa-question-circle text-primary"></i>
+                                <span class="tooltip-content tooltip-top w-72">
+                                    <div class="text-left">
+                                        <p class="font-medium">关于"isReturnBool":</p>
+                                        <p>此选项用于指定当前AI分析的问题是否可以用布尔值（是/否）直接回答。</p>
+                                        <p class="mt-1">例如：</p>
+                                        <ul class="list-disc pl-5 mt-1">
+                                            <li>选择"是"：当问题可以直接用"是"或"否"回答时（如"此函数是否存在SQL注入漏洞？"）</li>
+                                            <li>选择"否"：当问题需要更详细的解释时（如"请分析此函数的安全风险"）</li>
+                                        </ul>
+                                        <p class="mt-1">选择合适的选项将帮助AI生成更准确的分析结果。</p>
+                                    </div>
+                                </span>
+                            </span>
+                        <input type="checkbox" id="isReturnBool" name="isReturnBool" value="true" class="checkbox-primary ml-2">
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
+                    <i class="fa fa-search mr-2"></i>开始扫描
+                </button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
+<script>
+    // 获取DOM元素
+    const isUseAiCheckbox = document.getElementById('isUseAi');
+    const isUseAiPromptCheckbox = document.getElementById('isUseAiPrompt');
+    const aiModelSelectGroup = document.getElementById('aiModelSelectGroup');
+    const aiPromptButtonGroup = document.getElementById('aiPromptButtonGroup');
+    const aiPromptGroup = document.getElementById('aiPromptGroup');
+    const aiPromptInput = document.getElementById('aiPrompt');
+    const isReturnBoolGroup = document.getElementById('isReturnBoolGroup');
+
+    // 监听isUseAi复选框变化
+    isUseAiCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            // 显示AI模型选择下拉框
+            aiModelSelectGroup.classList.remove('hidden');
+            // 显示AI提示按钮组
+            aiPromptButtonGroup.classList.remove('hidden');
+            aiPromptButtonGroup.classList.add('flex', 'flex-col');
+        } else {
+            // 隐藏AI模型选择下拉框、AI提示按钮组和输入框组
+            aiModelSelectGroup.classList.add('hidden');
+            aiPromptButtonGroup.classList.add('hidden');
+            aiPromptButtonGroup.classList.remove('flex', 'flex-col');
+            aiPromptGroup.classList.add('hidden');
+            isReturnBoolGroup.classList.add('hidden');
+            // 同时取消选中相关复选框
+            isUseAiPromptCheckbox.checked = false;
+        }
+    });
+
+    // 监听isUseAiPrompt复选框变化
+    isUseAiPromptCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            // 显示AI提示输入框组和isReturnBool选项
+            aiPromptGroup.classList.remove('hidden');
+            aiPromptInput.required = true; // 设置为必填
+            isReturnBoolGroup.classList.remove('hidden');
+        } else {
+            // 隐藏AI提示输入框组和isReturnBool选项
+            aiPromptGroup.classList.add('hidden');
+            aiPromptInput.required = false; // 取消必填
+            isReturnBoolGroup.classList.add('hidden');
+        }
+    });
+
+    // 初始化状态（如果isUseAi默认选中）
+    if (isUseAiCheckbox.checked) {
+        aiModelSelectGroup.classList.remove('hidden');
+        aiPromptButtonGroup.classList.remove('hidden');
+        aiPromptButtonGroup.classList.add('flex', 'flex-col');
+    }
+</script>
 </body>
 </html>

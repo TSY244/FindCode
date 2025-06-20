@@ -67,7 +67,9 @@
 
         {{range $unit := $units}}
         <div class="unit-item">
+            {{if $.isReturnBool}}
             <div class="result-text">结果: {{$unit.Result}}</div>
+            {{end}}
             <div class="reason-text">原因: {{$unit.Reason}}</div>
         </div>
         {{end}}

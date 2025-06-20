@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"ScanIDOR/internal/config"
 	"ScanIDOR/internal/pkg/ai/prompt"
 	"ScanIDOR/internal/pkg/ai/request"
 	"ScanIDOR/internal/pkg/ai/respose"
@@ -16,19 +17,19 @@ import (
 )
 
 func TestRequest(t *testing.T) {
-	sysEnv.SetEnv("env.api_sk", "sk-89eb131d2a134934b64b5b612c795e50")
-	// 处理请求
-	fileName := "deepseekConfig.yaml"
-	content, err := os.ReadFile(fileName)
+
+	configPath := "/Users/august/code/go/FindCode/etc/config.yaml"
+	c, err := config.Init(configPath)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
+
 	aiSk := sysEnv.GetEnv("ai_sk")
 	params := map[string]string{
 		"env.api_sk": aiSk,
 		"msg":        "请你计算1+1 是否等于2，结果请用纯json 字符串。不带md 格式",
-		"system":     prompt.JsonSystem,
+		"system":     prompt.CheckApiSystem,
 	}
 	source := template.NewTemplate(string(content), params)
 	source.Load()
