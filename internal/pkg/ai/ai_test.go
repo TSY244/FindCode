@@ -29,7 +29,7 @@ func TestRequest(t *testing.T) {
 	params := map[string]string{
 		"env.api_sk": aiSk,
 		"msg":        "请你计算1+1 是否等于2，结果请用纯json 字符串。不带md 格式",
-		"system":     prompt.JsonSystem,
+		"system":     prompt.CheckApiSystem,
 	}
 	source := template.NewTemplate(string(content), params)
 	source.Load()

@@ -5,4 +5,4 @@ services:
       - "18080:8080"
     restart: always
     environment:
-      - ai_sk=${ENV_AI_SK}
+      - AiSk=${ENV_AI_SK}

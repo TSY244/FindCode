@@ -23,7 +23,9 @@ const (
 	AiMode  string = "ai"
 )
 
+// 用于传参数
 const (
-	IsUseCtxKey = "isUseCtx"
-	AiConfigKey = "aiConfig"
+	IsUseCtxKey     = "isUseCtx"
+	AiConfigKey     = "aiConfig"
+	IsReturnBoolKey = "isReturnBool"
 )

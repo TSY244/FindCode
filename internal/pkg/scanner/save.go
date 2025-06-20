@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func SaveToFile(taskName string) {
+func SaveToFile(taskName string, env2 *Env) {
 	resultDir := "result/"
 	err := os.MkdirAll(resultDir, os.ModePerm)
 	if err != nil {
@@ -44,7 +44,7 @@ func SaveToFile(taskName string) {
 		logger.Error(err)
 	}
 
-	for path, ret := range Result {
+	for path, ret := range env2.Result {
 		strMeg := fmt.Sprintf("\n\n%s 扫描结果如下\n开始行数:结尾行数:函数名字\n", path)
 		_, err := writer.WriteString(strMeg)
 		if err != nil {
@@ -62,13 +62,13 @@ func SaveToFile(taskName string) {
 	logger.Infof("save file %s success.", fileName)
 }
 
-func SaveAiResult() {
+func SaveAiResult(env *Env) {
 	resultDir := "ai_result/"
 	err := os.MkdirAll(resultDir, os.ModePerm)
 	if err != nil {
 		return
 	}
-	for path, aiResult := range AiResult {
+	for path, aiResult := range env.AiBoolResult {
 		for funcName, units := range aiResult {
 			timestamp := fmt.Sprintf("%d", time.Now().Unix())
 			fileName := resultDir + funcName + "_" + timestamp + ".txt"

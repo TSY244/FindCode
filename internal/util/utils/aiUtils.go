@@ -38,7 +38,7 @@ func GetChatRequest(config *ai.Config) *request.ChatRequest {
 	}
 }
 
-func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string) (string, error) {
+func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string, config *ai.Config) (string, error) {
 
 	sk := sysEnv.GetEnv(consts.AiSkEnvKey)
 	if sk == "" {
@@ -52,10 +52,18 @@ func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string) (string, err
 		logger.Error(err)
 	}
 	var msgs []request.DeepseekMessage
-	msgs = append(msgs, request.DeepseekMessage{
-		Role:    "system",
-		Content: prompt.JsonSystem,
-	})
+	if !config.IsUseAiPrompt {
+		msgs = append(msgs, request.DeepseekMessage{
+			Role:    "system",
+			Content: prompt.CheckApiSystem,
+		})
+	} else {
+		msgs = append(msgs, request.DeepseekMessage{
+			Role:    "system",
+			Content: prompt.JsonSystem,
+		})
+	}
+
 	msgs = append(msgs, request.DeepseekMessage{
 		Role:    "user",
 		Content: totalPrompt,

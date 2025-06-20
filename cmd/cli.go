@@ -8,7 +8,6 @@ import (
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
-	"context"
 	"fmt"
 	"time"
 )
@@ -38,9 +37,8 @@ func main() {
 
 	loadEnv(&r) // 加载环境变量
 
-	ctx := context.WithValue(context.Background(), consts.IsUseCtxKey, false) // 控制穿传入的参数
-
-	if err := scanner.Scan(ctx, env.LogicDir, &r); err != nil {
+	envData := scanner.NewEnv()
+	if err := scanner.Scan(env.LogicDir, &r, envData); err != nil {
 		logger.Fatal(err)
 	}
 

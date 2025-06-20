@@ -1,5 +1,35 @@
 package scanner
 
+import "sync"
+
+type Env struct {
+	Result          map[string][]string
+	funcCache       Cache
+	ApiCache        Cache
+	ApiCacheMap     map[string]*cacheUnit
+	JudgedCache     map[string]bool
+	CodeCache       map[string][]*cacheUnit
+	nameJudgedCache map[string]bool
+	modeJudgeCache  map[string]struct{}
+	AiBoolResult    map[string]AiBoolResultUnit
+	FuncCacheMap    map[string]*cacheUnit
+}
+
+func NewEnv() *Env {
+	return &Env{
+		Result:          make(map[string][]string),
+		funcCache:       make(Cache),
+		FuncCacheMap:    make(map[string]*cacheUnit),
+		ApiCache:        make(Cache),
+		ApiCacheMap:     make(map[string]*cacheUnit),
+		JudgedCache:     make(map[string]bool),
+		CodeCache:       make(map[string][]*cacheUnit),
+		nameJudgedCache: make(map[string]bool),
+		modeJudgeCache:  make(map[string]struct{}),
+		AiBoolResult:    make(map[string]AiBoolResultUnit),
+	}
+}
+
 var (
 	// Result 用于存放并发时候的数据
 	Result = make(map[string][]string)
@@ -24,6 +54,9 @@ var (
 	// modeCache 存放扫描模式
 	modeCache = make(map[string]struct{})
 
-	// AiResult 存放ai 扫描结果
-	AiResult = make(map[string]AiResultUnit) // path -> funcName -> result
+	// AiBoolResult 存放ai json 格式的扫描结果
+	AiBoolResult = make(map[string]AiBoolResultUnit) // path -> funcName -> result
+
+	// 为了后端项目兼容，使用读写锁
+	locker = new(sync.RWMutex)
 )

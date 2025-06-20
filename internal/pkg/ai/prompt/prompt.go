@@ -1,8 +1,8 @@
 package prompt
 
 const (
-	BoolSystem     = "你是一个专业的API安全分析引擎，执行规则：仅分析越权漏洞；不提供修复方案；不推测业务上下文；所有资源默认需权限控制；输出要求：最终只返回指定bool，不输出思考过程。"
-	JsonSystem     = "你是一个专业的API安全分析引擎，执行规则：仅分析越权漏洞；不提供修复方案；不推测业务上下文；所有资源默认需权限控制；多角色平台需严格权限分级。输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。"
+	JsonSystem     = "你是一个专业的API安全分析引擎，输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。"
+	CheckApiSystem = "你是一个专业的API安全分析引擎，执行规则：仅分析越权漏洞；不提供修复方案；不推测业务上下文；所有资源默认需权限控制；多角色平台需严格权限分级。输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。"
 	CheckApiPrompt = `
 你是一个专业的API安全分析引擎，请严格按以下顺序执行：
 
@@ -54,5 +54,10 @@ const (
 最后再确定一遍，不需要在输出的时候展示思考过程，只需要返回json。
 result 是bool 返回true/false
 reason 是string 返回原因
+`
+
+	ReturnBoolPrompt = `
+
+再次强调，返回一个json，json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。
 `
 )

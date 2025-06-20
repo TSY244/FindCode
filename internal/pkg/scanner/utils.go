@@ -203,7 +203,7 @@ func getFuncCode(srcStr string, decl *ast.FuncDecl) string {
 }
 
 // printResult 打印结果
-func printResult(ret map[string][]string) {
+func printResult(ret map[string][]string, env *Env) {
 	if strModeFlag {
 		color.Magenta("该项目存在filter\n\n")
 	} else {
@@ -219,7 +219,7 @@ func printResult(ret map[string][]string) {
 		logger.Infoln("go mode没有扫描出结果！")
 		return
 	}
-	for filePath, ret := range Result {
+	for filePath, ret := range env.Result {
 		//logger.Warn(filePath + " 的文件可能存在的越权漏洞如下：")
 		color.HRed(filePath + " 的文件可能存在的越权漏洞如下：\n")
 		allSize += len(ret)
@@ -250,4 +250,43 @@ func LoadCtx(ctx context.Context, r *rule.Rule) {
 		r.AiConfig = aiConFig
 	}
 
+}
+
+func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnit) {
+	if strings.HasPrefix(clonePath, "./") {
+		clonePath = strings.Replace(clonePath, "./", "", 1)
+	}
+	locker.RLock()
+	defer locker.RUnlock()
+	ret := make(map[string][]string)
+	boolRet := make(map[string]AiBoolResultUnit)
+	for k, v := range env.Result {
+		if strings.HasPrefix(k, clonePath) {
+			ret[k] = v
+		}
+	}
+	for k, v := range env.AiBoolResult {
+		if strings.HasPrefix(k, clonePath) {
+			boolRet[k] = v
+		}
+	}
+	return &ret, &boolRet
+}
+
+func ClearResult(clonePath string, env *Env) {
+	if strings.HasPrefix(clonePath, "./") {
+		clonePath = strings.Replace(clonePath, "./", "", 1)
+	}
+	locker.Lock()
+	defer locker.Unlock()
+	for k := range env.Result {
+		if strings.HasPrefix(k, clonePath) {
+			delete(env.Result, k)
+		}
+	}
+	for k := range env.AiBoolResult {
+		if strings.HasPrefix(k, clonePath) {
+			delete(env.AiBoolResult, k)
+		}
+	}
 }
