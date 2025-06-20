@@ -1,8 +1,13 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/config"
+	"ScanIDOR/internal/pkg/ai"
+	"ScanIDOR/internal/pkg/rule"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/color"
 	"ScanIDOR/pkg/logger"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -225,4 +230,24 @@ func printResult(ret map[string][]string) {
 		fmt.Println()
 	}
 	logger.Infof("函数个数: %d", allSize)
+}
+
+// LoadCtx 暂时只负责处理ai scan 的传参问题
+func LoadCtx(ctx context.Context, r *rule.Rule) {
+	isUseCtx, ok := ctx.Value(consts.IsUseCtxKey).(bool)
+	if !ok {
+		return
+	}
+	if !isUseCtx { // 当不使用ctx 说明是cli 模式。
+		if config.CoreConfig == nil || config.CoreConfig.AiConfig == nil {
+			return
+		}
+		r.AiConfig = config.CoreConfig.AiConfig
+		return
+	}
+	aiConFig, ok := ctx.Value(consts.AiConfigKey).(*ai.Config)
+	if ok {
+		r.AiConfig = aiConFig
+	}
+
 }

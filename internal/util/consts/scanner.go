@@ -1,4 +1,4 @@
-package scanner
+package consts
 
 const (
 	ArgsSize   = 2
@@ -21,4 +21,9 @@ const (
 	StrMode string = "str"
 	GoMode  string = "go"
 	AiMode  string = "ai"
+)
+
+const (
+	IsUseCtxKey = "isUseCtx"
+	AiConfigKey = "aiConfig"
 )

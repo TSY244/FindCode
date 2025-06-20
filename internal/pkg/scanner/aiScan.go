@@ -3,19 +3,14 @@ package scanner
 import (
 	"ScanIDOR/internal/pkg/ai"
 	"ScanIDOR/internal/pkg/ai/prompt"
-	"ScanIDOR/internal/pkg/ai/request"
 	"ScanIDOR/internal/pkg/ai/respose"
 	result2 "ScanIDOR/internal/pkg/ai/result"
 	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/pkg/sysEnv"
-	"ScanIDOR/pkg/template"
 	"ScanIDOR/utils/util"
 	"fmt"
-	"github.com/goccy/go-json"
 	"gopkg.in/yaml.v2"
-	"os"
 	"strings"
 )
 
@@ -26,7 +21,7 @@ type Unit struct {
 	Reason string
 }
 
-func aiScan() error {
+func aiScan(config *ai.Config) error {
 	for path, apis := range apiCache {
 		for _, api := range apis {
 			repeatNum := 0
@@ -43,13 +38,9 @@ func aiScan() error {
 
 			totalPrompt := getTotalPrompt(string(funcCode), allSubCode)
 
-			r, err := getChatRequest()
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
+			r := utils.GetChatRequest(config)
 
-			jsonBody, err := getDeepseekRequest(r, totalPrompt)
+			jsonBody, err := utils.GetDeepseekRequest(r, totalPrompt)
 			if err != nil {
 				logger.Error(err)
 				return err
@@ -106,58 +97,6 @@ func getTotalPrompt(funcCode, allSubCode string) string {
 	totalPrompt := fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
 	totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
 	return totalPrompt
-}
-
-func getChatRequest() (*request.ChatRequest, error) {
-	content, err := os.ReadFile(env.AiConfigPath)
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-
-	aiSk := sysEnv.GetEnv(ai.AiSkEnv)
-	params := map[string]string{
-		"ai_sk":  aiSk,
-		"msg":    "",
-		"system": "",
-	}
-	source := template.NewTemplate(string(content), params)
-	source.Load()
-	result, err := source.Replace()
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-
-	var r request.ChatRequest
-	if err = yaml.Unmarshal([]byte(result), &r); err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-	return &r, nil
-}
-
-func getDeepseekRequest(r *request.ChatRequest, totalPrompt string) (string, error) {
-	var deepseekreq request.DeepseekReq
-	if err := json.Unmarshal([]byte(r.Body), &deepseekreq); err != nil {
-		logger.Error(err)
-	}
-	var msgs []request.DeepseekMessage
-	msgs = append(msgs, request.DeepseekMessage{
-		Role:    "system",
-		Content: prompt.JsonSystem,
-	})
-	msgs = append(msgs, request.DeepseekMessage{
-		Role:    "user",
-		Content: totalPrompt,
-	})
-	deepseekreq.Messages = msgs
-
-	jsonBody, err := json.Marshal(deepseekreq)
-	if err != nil {
-		logger.Error(err)
-	}
-	return string(jsonBody), nil
 }
 
 func saveToAiResult(path string, jsonRet result2.JsonResult, api cacheUnit) {

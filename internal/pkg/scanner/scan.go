@@ -2,8 +2,10 @@ package scanner
 
 import (
 	"ScanIDOR/internal/pkg/rule"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
+	"context"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -16,24 +18,26 @@ type modeFunc func(path string, target *rule.Rule) error
 
 var (
 	ModeFuncMap = map[string]modeFunc{
-		GoMode:  goModeFunc,
-		StrMode: strModeFunc,
+		consts.GoMode:  goModeFunc,
+		consts.StrMode: strModeFunc,
 	}
 	strModeFlag  = false
 	isUsedGoMode = false
 )
 
-func Scan(path string, r *rule.Rule) error {
+func Scan(ctx context.Context, path string, r *rule.Rule) error {
 	if r == nil {
 		return errors.New("r is nil")
 	}
+	LoadCtx(ctx, r)
+
 	info, err := checkFileStatue(path)
 	if err != nil {
 		return err
 	}
 	// 根据文件类型启动不同的扫描逻辑
 	if info.IsDir() {
-		if err := dealDir(path, r, BeginLevel); err != nil {
+		if err := dealDir(path, r, consts.BeginLevel); err != nil {
 			return err
 		}
 	} else {
@@ -41,7 +45,7 @@ func Scan(path string, r *rule.Rule) error {
 			return err
 		}
 	}
-	if isUseMode(r, GoMode) {
+	if isUseMode(r, consts.GoMode) {
 		isUsedGoMode = true
 		if err := processFuncDecls(r); err != nil {
 			return err
@@ -49,8 +53,8 @@ func Scan(path string, r *rule.Rule) error {
 	}
 
 	// 判断是否使用ai mode
-	if isUseMode(r, AiMode) {
-		if err := aiScan(); err != nil {
+	if isUseMode(r, consts.AiMode) {
+		if err := aiScan(r.AiConfig); err != nil {
 			return err
 		}
 	}
@@ -108,7 +112,7 @@ func dealFile(path string, target *rule.Rule) error {
 	}
 
 	for _, mode := range target.Mode {
-		if mode == AiMode {
+		if mode == consts.AiMode {
 			continue
 		}
 		f, ok := ModeFuncMap[mode]

@@ -5,8 +5,10 @@ import (
 	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
+	"context"
 	"fmt"
 	"time"
 )
@@ -36,7 +38,9 @@ func main() {
 
 	loadEnv(&r) // 加载环境变量
 
-	if err := scanner.Scan(env.LogicDir, &r); err != nil {
+	ctx := context.WithValue(context.Background(), consts.IsUseCtxKey, false) // 控制穿传入的参数
+
+	if err := scanner.Scan(ctx, env.LogicDir, &r); err != nil {
 		logger.Fatal(err)
 	}
 
@@ -47,6 +51,6 @@ func loadEnv(r *rule.Rule) {
 		r.GoModeTargetRule.Rule = env.GoTarget
 	}
 	if env.AiMode == true {
-		r.Mode = append(r.Mode, scanner.AiMode)
+		r.Mode = append(r.Mode, consts.AiMode)
 	}
 }
