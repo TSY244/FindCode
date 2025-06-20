@@ -60,7 +60,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: |
           OUTPUT="FindCode-CLI-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -o $OUTPUT ./cmd/cmd.go
+          go build -o $OUTPUT ./cmd/cli.go
           echo "CLI_OUTPUT=$OUTPUT" >> $GITHUB_ENV
 
       - name: Build Server binary
