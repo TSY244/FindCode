@@ -27,6 +27,7 @@ mkdir -p "$(dirname "$OUTPUT_REPORT")"
 
 # debug:
 ls -al
+ls /app -al
 
 
 # 执行FindCode扫描
