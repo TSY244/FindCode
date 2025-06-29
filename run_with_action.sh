@@ -36,6 +36,11 @@ else
   echo "target_path 不处理: $TARGET_PATH"
 fi
 
+echo "当前目录："
+ls -al
+
+echo "/app 目录"
+ls -al /app
 
 
 # 执行FindCode扫描
