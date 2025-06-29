@@ -60,8 +60,12 @@ echo "输出报告路径: $OUTPUT_REPORT"
 
 FindCode -l "$TARGET_PATH" -r "$RULE_FILE" -o "$OUTPUT_REPORT" -go_target "$TARGET_CODE" -c "/app/etc/config.yaml"
 
+
 # 检查执行状态
 if [ $? -eq 0 ]; then
+    cat "$OUTPUT_REPORT"
+    ls /home/runner/work/augeu/augeu/report/ -al
+
     echo "FindCode扫描完成，报告已生成在: $OUTPUT_REPORT"
     exit 0
 else
@@ -69,4 +73,3 @@ else
     exit 1
 fi
 
-cat "$OUTPUT_REPORT"
