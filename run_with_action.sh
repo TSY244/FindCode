@@ -25,6 +25,10 @@ esac
 # 创建输出目录（如果不存在）
 mkdir -p "$(dirname "$OUTPUT_REPORT")"
 
+# debug:
+ls -al
+
+
 # 执行FindCode扫描
 echo "执行FindCode扫描..."
 echo "目标代码路径: $TARGET_PATH"
