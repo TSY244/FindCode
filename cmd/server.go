@@ -23,6 +23,7 @@ func main() {
 	}
 
 	a, err := app.NewApp(&conf)
+
 	if err != nil {
 		panic(err)
 	}
