@@ -25,7 +25,18 @@ esac
 # 创建输出目录（如果不存在）
 mkdir -p "$(dirname "$OUTPUT_REPORT")"
 
-pwd
+# 处理 target_path
+# 如果是 ./ 开头 就将这个路径添加去除 ./ 之后 添加到  /github/workspace。如果是 / 开头不处理，否则就添加 /github/workspace/
+if [[ $TARGET_PATH == "./"* ]]; then
+  TARGET_PATH="/github/workspace/${TARGET_PATH#./}"
+  echo "处理 target_path: $TARGET_PATH"
+elif [[ $TARGET_PATH != "/"* ]]; then
+  echo "处理 target_path: $TARGET_PATH"
+else
+  echo "target_path 不处理: $TARGET_PATH"
+fi
+
+
 
 # 执行FindCode扫描
 echo "执行FindCode扫描..."
