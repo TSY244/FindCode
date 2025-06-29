@@ -50,7 +50,6 @@ ls -al /app
 # 制作findCode 到 全局可调用的地方
 ln -s /app/FindCode /usr/local/bin/FindCode
 
-
 # 执行FindCode扫描
 echo "执行FindCode扫描..."
 echo "目标代码路径: $TARGET_PATH"
