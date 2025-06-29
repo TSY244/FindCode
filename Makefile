@@ -16,7 +16,7 @@ build_cmd:
 	go build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/cli.go
 	@echo "编译完成，生成可执行文件: $(BUILD_DIR)/$(BINARY_NAME)"
 
-# 2. 执行 run_cmd.sh（需传入 GIT_URL 参数或环境变量）
+# 2. 执行 run_with_git.sh（需传入 GIT_URL 参数或环境变量）
 run:
 	@if [ -z "$(GIT_URL)" ]; then \
         echo "错误: 必须提供 GIT_URL 参数（如: make run GIT_URL=xxx）"; \
