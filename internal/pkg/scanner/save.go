@@ -18,7 +18,7 @@ func SaveToFile(taskName string, env2 *Env) {
 	var fileName string
 
 	if env.OutputFile != "" {
-		fileName = resultDir + env.OutputFile
+		fileName = env.OutputFile
 	} else {
 		timestamp := fmt.Sprintf("%d", time.Now().Unix())
 		fileName = resultDir + taskName + "_" + timestamp + ".txt"
