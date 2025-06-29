@@ -25,10 +25,7 @@ esac
 # 创建输出目录（如果不存在）
 mkdir -p "$(dirname "$OUTPUT_REPORT")"
 
-# debug:
-ls -al
-ls /app -al
-
+pwd
 
 # 执行FindCode扫描
 echo "执行FindCode扫描..."
@@ -37,7 +34,7 @@ echo "代码类型: $CODE_TYPE"
 echo "使用规则文件: $RULE_FILE"
 echo "输出报告路径: $OUTPUT_REPORT"
 
-./FindCode -l "$TARGET_PATH" -r "$RULE_FILE" -o "$OUTPUT_REPORT" -go_target "$TARGET_CODE"
+./app/FindCode -l "$TARGET_PATH" -r "$RULE_FILE" -o "$OUTPUT_REPORT" -go_target "$TARGET_CODE"
 
 # 检查执行状态
 if [ $? -eq 0 ]; then
