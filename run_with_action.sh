@@ -68,3 +68,5 @@ else
     echo "FindCode扫描失败"
     exit 1
 fi
+
+cat "$OUTPUT_REPORT"
