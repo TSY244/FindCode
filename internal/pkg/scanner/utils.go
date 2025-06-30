@@ -252,14 +252,14 @@ func LoadCtx(ctx context.Context, r *rule.Rule) {
 
 }
 
-func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnit) {
+func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnitWithStatue) {
 	if strings.HasPrefix(clonePath, "./") {
 		clonePath = strings.Replace(clonePath, "./", "", 1)
 	}
 	locker.RLock()
 	defer locker.RUnlock()
 	ret := make(map[string][]string)
-	boolRet := make(map[string]AiBoolResultUnit)
+	boolRet := make(map[string]AiBoolResultUnitWithStatue)
 	for k, v := range env.Result {
 		if strings.HasPrefix(k, clonePath) {
 			ret[k] = v
@@ -267,10 +267,39 @@ func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]Ai
 	}
 	for k, v := range env.AiBoolResult {
 		if strings.HasPrefix(k, clonePath) {
-			boolRet[k] = v
+			boolRet[k] = getAiBoolResultUnitWithStatue(&v)
 		}
 	}
 	return &ret, &boolRet
+}
+
+func getAiBoolResultUnitWithStatue(aiBoolResultUnit *AiBoolResultUnit) AiBoolResultUnitWithStatue {
+	aiBoolResult := make(AiBoolResultUnitWithStatue)
+	for k, v := range *aiBoolResultUnit {
+		aiBoolResult[k] = aiBoolUnitWithStatue{
+			Statue:      getStatue(&v),
+			AiBoolUnits: v,
+		}
+	}
+	return aiBoolResult
+}
+
+func getStatue(abus *[]aiBoolUnit) int {
+	var statue int
+	size := len(*abus)
+	for _, unit := range *abus {
+		if unit.Result == "true" {
+			statue++
+		} else if unit.Result == "false" {
+			statue--
+		}
+	}
+	if statue == size {
+		return 1
+	} else if statue == -size {
+		return -1
+	}
+	return 0
 }
 
 func ClearResult(clonePath string, env *Env) {
@@ -289,4 +318,13 @@ func ClearResult(clonePath string, env *Env) {
 			delete(env.AiBoolResult, k)
 		}
 	}
+}
+
+func GetContainsRule(strs []string) string {
+	var allFuncs []string
+	for _, str := range strs {
+		allFuncs = append(allFuncs, "contain("+str+")")
+	}
+	ruleStr := strings.Join(allFuncs, " || ")
+	return "! " + ruleStr
 }

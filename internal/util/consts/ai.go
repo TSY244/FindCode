@@ -1,7 +1,7 @@
 package consts
 
 const (
-	DeepseekKey = "deepseek-chat"
+	OpenAIKey = "deepseek-chat"
 )
 
 const (

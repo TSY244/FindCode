@@ -52,6 +52,15 @@
             margin-top: 5px;
             font-size: 0.9em;
         }
+        .status-danger {
+            color: red;
+        }
+        .status-suspicious {
+            color: #B8860B;
+        }
+        .status-safe {
+            color: green;
+        }
     </style>
 </head>
 <body>
@@ -61,11 +70,19 @@
 <div class="result-card">
     <h2 class="result-header">路径: {{$path}}</h2>
 
-    {{range $funcName, $units := $aiResultUnit}}
+    {{range $funcName, $unitWithStatus := $aiResultUnit}}
     <div class="function-card">
-        <div class="function-name">函数: {{$funcName}}</div>
+        <div class="function-name">函数: {{$funcName}}
+            {{if eq $unitWithStatus.Statue -1}}
+            <span class="status-danger">危险</span>
+            {{else if eq $unitWithStatus.Statue 1}}
+            <span class="status-safe">安全</span>
+            {{else}}
+            <span class="status-suspicious">可疑</span>
+            {{end}}
+        </div>
 
-        {{range $unit := $units}}
+        {{range $unit := $unitWithStatus.AiBoolUnits}}
         <div class="unit-item">
             {{if $.isReturnBool}}
             <div class="result-text">结果: {{$unit.Result}}</div>
@@ -77,5 +94,7 @@
     {{end}}
 </div>
 {{end}}
+
+
 </body>
 </html>

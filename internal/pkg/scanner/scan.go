@@ -58,6 +58,9 @@ func Scan(path string, r *rule.Rule, env *Env) error {
 
 	// 判断是否使用ai mode
 	if isUseMode(r, consts.AiMode) {
+		if r.GoModeTargetRule.Rule != "true" {
+			r.AiConfig.Prompt = r.AiConfig.Prompt + "\n\n相关鉴权函数逻辑" + r.GoModeTargetRule.Rule
+		}
 		if err := aiScan(r.AiConfig, env); err != nil {
 			return err
 		}
