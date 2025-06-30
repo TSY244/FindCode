@@ -51,20 +51,20 @@ func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string, config *ai.C
 	if err := json.Unmarshal([]byte(r.Body), &deepseekreq); err != nil {
 		logger.Error(err)
 	}
-	var msgs []request.DeepseekMessage
+	var msgs []request.OpenAiMessage
 	if !config.IsUseAiPrompt {
-		msgs = append(msgs, request.DeepseekMessage{
+		msgs = append(msgs, request.OpenAiMessage{
 			Role:    "system",
 			Content: prompt.CheckApiSystem,
 		})
 	} else {
-		msgs = append(msgs, request.DeepseekMessage{
+		msgs = append(msgs, request.OpenAiMessage{
 			Role:    "system",
 			Content: prompt.JsonSystem,
 		})
 	}
 
-	msgs = append(msgs, request.DeepseekMessage{
+	msgs = append(msgs, request.OpenAiMessage{
 		Role:    "user",
 		Content: totalPrompt,
 	})

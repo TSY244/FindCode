@@ -35,7 +35,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	loadEnv(&r) // 加载环境变量
+	loadEnv(&r, conf) // 加载环境变量
 
 	envData := scanner.NewEnv()
 	if err := scanner.Scan(env.LogicDir, &r, envData); err != nil {
@@ -44,11 +44,12 @@ func main() {
 
 }
 
-func loadEnv(r *rule.Rule) {
+func loadEnv(r *rule.Rule, c *config.Config) {
 	if env.GoTarget != "" {
 		r.GoModeTargetRule.Rule = env.GoTarget
 	}
 	if env.AiMode == true {
 		r.Mode = append(r.Mode, consts.AiMode)
+		r.AiConfig = c.AiConfig
 	}
 }

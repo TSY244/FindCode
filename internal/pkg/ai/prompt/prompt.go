@@ -8,7 +8,6 @@ const (
 
 
 1. 越权漏洞检测
-   - 触发条件：仅当needs_auth_check=true时执行  
    - 检测逻辑：  
      - 水平越权：检查资源ID是否与当前用户身份绑定（如user_id=session.user_id）  
      - 垂直越权：检查角色权限是否在操作前验证（如if not is_admin(): deny()）  
