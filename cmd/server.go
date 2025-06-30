@@ -7,8 +7,24 @@ import (
 	"ScanIDOR/utils/util"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"sync"
+	"syscall"
 )
+
+var (
+	sigExitOnce = new(sync.Once)
+)
+
+func init() {
+	go sigExitOnce.Do(func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+		defer signal.Stop(c)
+
+	})
+}
 
 // 使用gin 搭建后段
 func main() {

@@ -16,6 +16,12 @@ import (
 
 type AiBoolResultUnit map[string][]aiBoolUnit
 
+type AiBoolResultUnitWithStatue map[string]aiBoolUnitWithStatue
+type aiBoolUnitWithStatue struct {
+	Statue      int // -1 危险 0 可疑 1 安全
+	AiBoolUnits []aiBoolUnit
+}
+
 type AiResultUnit map[string][]aiStrUnit
 
 type aiBoolUnit struct {
@@ -90,7 +96,7 @@ func getAllSubFuncCode(api *cacheUnit, path string, env *Env) (string, error) {
 	}
 	var allSubCode string
 	for i, code := range allSubCodes {
-		if len(allSubCode) >= 500 {
+		if len(allSubCode) >= 40000 {
 			break
 		}
 		allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i)

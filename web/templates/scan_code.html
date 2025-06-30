@@ -61,6 +61,21 @@
             .checkbox-primary {
                 @apply h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary;
             }
+            .code-snippet {
+                @apply bg-neutral-800 text-white p-3 rounded-lg my-2 overflow-hidden transition-all duration-300 hover:shadow-lg;
+            }
+            .code-snippet-collapsed {
+                @apply max-h-16 cursor-pointer;
+            }
+            .code-snippet-expanded {
+                @apply max-h-[300px] cursor-pointer;
+            }
+            .code-snippet-header {
+                @apply flex justify-between items-center mb-2;
+            }
+            .code-snippet-content {
+                @apply font-mono text-sm overflow-y-auto whitespace-pre;
+            }
         }
     </style>
 </head>
@@ -94,6 +109,41 @@
 
                 <div class="form-group">
                     <label class="flex items-center cursor-pointer">
+                        <span class="text-sm font-medium text-neutral-700 mr-2">是否填写鉴权api代码</span>
+                        <span class="tooltip-trigger inline-flex items-center">
+                                <i class="fa fa-question-circle text-primary"></i>
+                                <span class="tooltip-content tooltip-top">是否填写鉴权api代码</span>
+                            </span>
+                        <input type="checkbox" id="isUseAuthenticationAPI" name="isUseAuthenticationAPI" value="true" class="checkbox-primary ml-2">
+                    </label>
+                </div>
+
+                <!-- 新增的鉴权代码输入框组 -->
+                <div id="authenticationCodesGroup" class="form-group hidden">
+                    <label for="authenticationCodes" class="block text-sm font-medium text-neutral-700 mb-1">鉴权代码片段</label>
+                    <div class="flex flex-col space-y-3">
+                        <textarea id="authenticationCodesInput"
+                                  placeholder="输入鉴权代码片段"
+                                  class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all h-32"></textarea>
+                        <button type="button" id="addCodeSnippetBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 w-auto self-end">
+                            <i class="fa fa-plus mr-1"></i>添加代码片段
+                        </button>
+                    </div>
+
+                    <!-- 用于显示已添加的代码片段 -->
+                    <div id="codeSnippetsContainer" class="mt-4">
+                        <h3 class="text-sm font-medium text-neutral-700 mb-2">已添加的代码片段</h3>
+                        <div id="codeSnippetsList" class="space-y-2">
+                            <!-- 代码片段将动态添加到这里 -->
+                        </div>
+                    </div>
+
+                    <!-- 用于存储所有代码片段的隐藏输入 -->
+                    <input type="hidden" id="authenticationCodes" name="authenticationCodes" value="">
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center cursor-pointer">
                         <span class="text-sm font-medium text-neutral-700 mr-2">是否使用ai</span>
                         <span class="tooltip-trigger inline-flex items-center">
                                 <i class="fa fa-question-circle text-primary"></i>
@@ -109,6 +159,11 @@
                     <div class="relative">
                         <select id="aiModel" name="aiModel" class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all appearance-none">
                             <option value="deepseek-chat">deepseek-chat</option>
+                            <option value="llama3.3-70b-instruct">llama3.3-70b-instruct</option>
+                            <option value="qwen3-235b-a22b-fp8">Qwen3-235B-A22B-FP8</option>
+                            <option value="deepseek-r1-local-II">DeepSeek-R1-Local-II</option>
+                            <option value="deepseek-v3-local-II">DeepSeek-V3-Local-II</option>
+                            <option value="qwen3-235b-a22b-fp8-local-II">Qwen3-235B-A22B-FP8-Local-II</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-500">
                             <i class="fa fa-chevron-down text-xs"></i>
@@ -189,6 +244,15 @@
     const aiPromptGroup = document.getElementById('aiPromptGroup');
     const aiPromptInput = document.getElementById('aiPrompt');
     const isReturnBoolGroup = document.getElementById('isReturnBoolGroup');
+    const isUseAuthenticationAPICheckbox = document.getElementById('isUseAuthenticationAPI');
+    const authenticationCodesGroup = document.getElementById('authenticationCodesGroup');
+    const authenticationCodesInput = document.getElementById('authenticationCodesInput');
+    const addCodeSnippetBtn = document.getElementById('addCodeSnippetBtn');
+    const codeSnippetsList = document.getElementById('codeSnippetsList');
+    const authenticationCodes = document.getElementById('authenticationCodes');
+
+    // 存储所有代码片段
+    let codeSnippets = [];
 
     // 监听isUseAi复选框变化
     isUseAiCheckbox.addEventListener('change', function() {
@@ -224,6 +288,118 @@
             isReturnBoolGroup.classList.add('hidden');
         }
     });
+
+    // 监听isUseAuthenticationAPI复选框变化
+    isUseAuthenticationAPICheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            // 显示鉴权代码输入框组
+            authenticationCodesGroup.classList.remove('hidden');
+        } else {
+            // 隐藏鉴权代码输入框组
+            authenticationCodesGroup.classList.add('hidden');
+        }
+    });
+
+    // 添加代码片段按钮点击事件
+    addCodeSnippetBtn.addEventListener('click', function() {
+        const code = authenticationCodesInput.value.trim();
+        if (!code) {
+            alert('请输入代码片段');
+            return;
+        }
+
+        // 生成唯一ID
+        const snippetId = 'snippet_' + Date.now();
+
+        // 添加到代码片段数组
+        codeSnippets.push({
+            id: snippetId,
+            code: code
+        });
+
+        // 创建代码片段元素
+        const snippetElement = document.createElement('div');
+        snippetElement.id = snippetId;
+        snippetElement.className = 'code-snippet code-snippet-collapsed';
+        snippetElement.innerHTML = `
+            <div class="code-snippet-header">
+                <h4 class="font-medium text-sm">代码片段 ${codeSnippets.length}</h4>
+                <div class="flex space-x-2">
+                    <button class="text-xs bg-neutral-700 hover:bg-neutral-600 text-white py-1 px-2 rounded transition-all" onclick="toggleSnippet('${snippetId}')">
+                        <i class="fa fa-expand"></i>
+                    </button>
+                    <button class="text-xs bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded transition-all" onclick="removeSnippet('${snippetId}')">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="code-snippet-content">${escapeHTML(code)}</div>
+        `;
+
+        // 添加到列表
+        codeSnippetsList.appendChild(snippetElement);
+
+        // 更新隐藏输入的值
+        updateAuthenticationCodesInput();
+
+        // 清空输入框
+        authenticationCodesInput.value = '';
+    });
+
+    // 切换代码片段展开/折叠状态
+    window.toggleSnippet = function(id) {
+        const snippet = document.getElementById(id);
+        if (snippet.classList.contains('code-snippet-collapsed')) {
+            snippet.classList.remove('code-snippet-collapsed');
+            snippet.classList.add('code-snippet-expanded');
+            snippet.querySelector('button').innerHTML = '<i class="fa fa-compress"></i>';
+        } else {
+            snippet.classList.remove('code-snippet-expanded');
+            snippet.classList.add('code-snippet-collapsed');
+            snippet.querySelector('button').innerHTML = '<i class="fa fa-expand"></i>';
+        }
+    };
+
+    // 移除代码片段
+    window.removeSnippet = function(id) {
+        if (confirm('确定要删除这个代码片段吗？')) {
+            const snippet = document.getElementById(id);
+            snippet.remove();
+
+            // 从数组中移除
+            codeSnippets = codeSnippets.filter(snippet => snippet.id !== id);
+
+            // 更新隐藏输入的值
+            updateAuthenticationCodesInput();
+
+            // 更新代码片段编号
+            updateSnippetNumbers();
+        }
+    };
+
+    // 更新隐藏输入的值
+    function updateAuthenticationCodesInput() {
+        // 将所有代码片段用分隔符连接成字符串
+        authenticationCodes.value = JSON.stringify(codeSnippets);
+    }
+
+    // 更新代码片段编号
+    function updateSnippetNumbers() {
+        const snippets = document.querySelectorAll('.code-snippet');
+        snippets.forEach((snippet, index) => {
+            snippet.querySelector('h4').textContent = `代码片段 ${index + 1}`;
+        });
+    }
+
+    // 转义HTML特殊字符
+    function escapeHTML(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
     // 初始化状态（如果isUseAi默认选中）
     if (isUseAiCheckbox.checked) {

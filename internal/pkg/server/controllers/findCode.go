@@ -40,7 +40,15 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	gitUrl := request.GitURL
 	scanType := request.Type
 	isUseAi := request.IsUseAi
-
+	authenticationCodes := request.AuthenticationCodes
+	temp := make([]string, 0)
+	for _, str := range authenticationCodes {
+		if "" == str || "[]" == str {
+			continue
+		}
+		temp = append(temp, str)
+	}
+	authenticationCodes = temp
 	rulePath, ok := consts.TypeMap[scanType]
 	if !ok {
 		var msgs []string
@@ -112,6 +120,10 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 
 	env := scanner.NewEnv()
+
+	if len(authenticationCodes) != 0 {
+		r.GoModeTargetRule.Rule = scanner.GetContainsRule(authenticationCodes)
+	}
 
 	if err := scanner.Scan(clonePath, &r, env); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{

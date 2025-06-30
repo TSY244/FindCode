@@ -29,6 +29,19 @@ var (
 	}
 )
 
+func GetDefaultAiConfig(model string) *ai.Config {
+	return &ai.Config{
+		Model:  model,
+		Method: "POST",
+		URL:    "http://v2.open.venus.oa.com/llmproxy/chat/completions",
+		Headers: map[string]string{
+			"Content-Type":  "application/json",
+			"Authorization": "Bearer %s",
+		},
+		Body: "{\n      \"model\": \"" + model + "\",\n      \"messages\": [\n  \n      ],\n      \"stream\": false\n    }",
+	}
+}
+
 func GetChatRequest(config *ai.Config) *request.ChatRequest {
 	return &request.ChatRequest{
 		URL:     config.URL,
@@ -87,9 +100,9 @@ func GetAiBody(model string) (string, error) {
 
 func GetAiConfig(model string) (*ai.Config, error) {
 	switch model {
-	case consts.DeepseekKey:
+	case consts.OpenAIKey:
 		return &deepSeekAiConfig, nil
 	default:
-		return nil, errors.New("receiver error")
+		return GetDefaultAiConfig(model), nil
 	}
 }

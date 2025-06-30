@@ -10,8 +10,12 @@ import (
 	"strings"
 )
 
+const (
+	GitClonePrefix = "git-clone-"
+)
+
 func CloneRepository(ctx context.Context, url string) (string, error) {
-	tempDir, err := os.MkdirTemp("./", "git-clone-")
+	tempDir, err := os.MkdirTemp("./", GitClonePrefix)
 	if err != nil {
 		return "", err
 	}
@@ -46,3 +50,5 @@ func CheckGitUrl(url string) bool {
 
 	return re.MatchString(url)
 }
+
+func CleanGitRepository() {}
