@@ -1,6 +1,7 @@
 package util
 
 import (
+	"ScanIDOR/pkg/logger"
 	"context"
 	"fmt"
 	"github.com/go-git/go-git/v5"
@@ -21,15 +22,30 @@ func CloneRepository(ctx context.Context, url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	_, err = git.PlainCloneContext(ctx, tempDir, false, &git.CloneOptions{
+		URL:      url,
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		os.RemoveAll(tempDir) // 尽力清理
+		// 包装错误，提供上下文
+		logger.Errorf("从 URL '%s' 克隆仓库失败: %v", url, err)
+		//return "", fmt.Errorf("从 URL '%s' 克隆仓库失败: %w", url, err)
+	} else {
+		return tempDir, nil
+	}
+	//return tempDir, nil
+
 	sshAuth, err := createSSHAuth()
 	if err != nil {
 		return "", err
 	}
 
-	if err := cloneRepository(url, tempDir, sshAuth); err != nil {
-		return "", err
+	if err := cloneRepository(url, tempDir, sshAuth); err == nil {
+		return tempDir, nil
 	}
-	return tempDir, nil
+	logger.Error("Failed to clone repository at %s", tempDir)
+	return "", err
 }
 
 func CheckGitUrl(url string) bool {

@@ -143,6 +143,13 @@ func saveToAiResult(path string, jsonRet result2.JsonResult, api cacheUnit, conf
 				Reason: jsonRet.Reason,
 			})
 			resultMap[api.FuncAst.Name.Name] = units
+		} else {
+			resultMap[api.FuncAst.Name.Name] = []aiBoolUnit{
+				{
+					Result: jsonRet.Result,
+					Reason: jsonRet.Reason,
+				},
+			}
 		}
 	} else {
 		env.AiBoolResult[path] = map[string][]aiBoolUnit{
