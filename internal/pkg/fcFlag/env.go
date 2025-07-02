@@ -1,4 +1,4 @@
-package env
+package fcFlag
 
 import (
 	"ScanIDOR/internal/config"

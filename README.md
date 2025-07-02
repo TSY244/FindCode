@@ -1,7 +1,10 @@
 # todo
 - [x] 完成命令行ai 模式
 - [x] 完成 -go_target 参数模式
-- [ ] 将ai 模式的结果通过前端展示
+- [x] 将ai 模式的结果通过前端展示
+- [ ] 给server 添加自动识别框架代码
+- [ ] 展示项目扫描结果
+ 
 
 # 简介
 
@@ -526,11 +529,16 @@ file:
 ### 静态代码扫描逻辑
 1. 最简单的，通过制定项目是什么框架之后进行扫描
 
-   >  ./FindCode -l /product/path/  -r rule/find_trpc_api.yaml
+   >  ./FindCode -l /product/path/
+
+   自动识别项目框架
 
 2. 使用手动指定框架类型
 
-   > ./FindCode -l /product/path/   -f gin/go_swagger/trpc
+   > ./FindCode -l /product/path/ -r rule_path
+
+    这个地方使用自己的扫描规则
+    默认的规则有find_gin_api.yaml，find_go_swagger_api.yaml，find_trpc_api.yaml
 
 3. 添加扫描目标逻辑
 
@@ -555,13 +563,13 @@ file:
 
 2. 使用大模型询问，并得到结果，限定大模型返回bool
    通过大模型返回的bool 类型判读api+下游代码是否满足要求
-   > ./FindCode -ai true -l /product/path/ -r/-f data -prompt_file /Prompt.txt -ai_cycle num -o result.txt -return_true true
+   > ./FindCode -ai -l /product/path/ -r/-f data -prompt_file /Prompt.txt -ai_cycle num -o result.txt -return_true true
 
 
 
 ## docker-compose 
 ```
- GIT_URL=https://github.com/TSY244/augeu.git  docker-compose up -d
+AiSk=xxxxx docker-compose up -d
 ```
-   
+需要添加一个环境变量
 

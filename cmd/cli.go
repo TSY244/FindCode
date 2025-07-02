@@ -2,7 +2,7 @@ package main
 
 import (
 	"ScanIDOR/internal/config"
-	"ScanIDOR/internal/pkg/env"
+	"ScanIDOR/internal/pkg/fcFlag"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/internal/util/consts"
@@ -19,9 +19,9 @@ func main() {
 	}()
 
 	// 解析命令行参数，并且注册到"环境变量中"
-	env.CheckFlag()
+	fcFlag.CheckFlag()
 
-	conf, err := config.Init(env.ConfigPath)
+	conf, err := config.Init(fcFlag.ConfigPath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -30,11 +30,12 @@ func main() {
 	logger.SetDefaultLogger(logger.NewLogger(&conf.LogConf))
 
 	// 加载rule
-	if env.IsAutoFrameScan {
-		for _, r := range rule.LoadRuleWithFrame(fingerprint.GetProductPrint(env.LogicDir)) {
+	if fcFlag.IsAutoFrameScan {
+		for _, r := range rule.LoadRuleWithFrame(fingerprint.GetProductPrint(fcFlag.LogicDir)) {
 			loadEnv(&r, conf) // 加载环境变量
 			envData := scanner.NewEnv()
-			if err := scanner.Scan(env.LogicDir, &r, envData); err != nil {
+			envData.AiCycle = fcFlag.AiCycle
+			if err := scanner.Scan(fcFlag.LogicDir, &r, envData); err != nil {
 				logger.Fatal(err)
 			}
 		}
@@ -45,10 +46,10 @@ func main() {
 }
 
 func loadEnv(r *rule.Rule, c *config.Config) {
-	if env.GoTarget != "" {
-		r.GoModeTargetRule.Rule = env.GoTarget
+	if fcFlag.GoTarget != "" {
+		r.GoModeTargetRule.Rule = fcFlag.GoTarget
 	}
-	if env.AiMode == true {
+	if fcFlag.AiMode == true {
 		r.Mode = append(r.Mode, consts.AiMode)
 		r.AiConfig = c.AiConfig
 	}

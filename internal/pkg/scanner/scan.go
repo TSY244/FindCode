@@ -28,7 +28,7 @@ var (
 // Scan
 //
 // 参数：
-//   - env 用于兼容旧版本，但是需要改造成后端项目做的取舍
+//   - fcFlag 用于兼容旧版本，但是需要改造成后端项目做的取舍
 func Scan(path string, r *rule.Rule, env *Env) error {
 	if r == nil {
 		return errors.New("r is nil")
