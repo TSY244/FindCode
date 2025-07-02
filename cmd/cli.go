@@ -6,8 +6,8 @@ import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/internal/util/consts"
+	"ScanIDOR/pkg/fingerprint"
 	"ScanIDOR/pkg/logger"
-	"ScanIDOR/utils/util"
 	"fmt"
 	"time"
 )
@@ -30,16 +30,16 @@ func main() {
 	logger.SetDefaultLogger(logger.NewLogger(&conf.LogConf))
 
 	// 加载rule
-	var r rule.Rule
-	if err := util.LoadYaml(env.RulePath, &r); err != nil {
-		logger.Fatal(err)
-	}
+	if env.IsAutoFrameScan {
+		for _, r := range rule.LoadRuleWithFrame(fingerprint.GetProductPrint(env.LogicDir)) {
+			loadEnv(&r, conf) // 加载环境变量
+			envData := scanner.NewEnv()
+			if err := scanner.Scan(env.LogicDir, &r, envData); err != nil {
+				logger.Fatal(err)
+			}
+		}
+	} else {
 
-	loadEnv(&r, conf) // 加载环境变量
-
-	envData := scanner.NewEnv()
-	if err := scanner.Scan(env.LogicDir, &r, envData); err != nil {
-		logger.Fatal(err)
 	}
 
 }
