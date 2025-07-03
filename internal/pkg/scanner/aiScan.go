@@ -5,7 +5,6 @@ import (
 	"ScanIDOR/internal/pkg/ai/prompt"
 	"ScanIDOR/internal/pkg/ai/respose"
 	result2 "ScanIDOR/internal/pkg/ai/result"
-	"ScanIDOR/internal/pkg/env"
 	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
@@ -60,7 +59,7 @@ func aiScan(config *ai.Config, env2 *Env) error {
 
 			//body := fmt.Sprintf(r.Body, prompt.CheckApiSystem, totalPrompt)
 			r.Body = jsonBody
-			for i := 0; i < env.AiCycle; i++ {
+			for i := 0; i < env2.AiCycle; i++ {
 				var ret respose.DeepseekResp
 				err = r.Send(&ret)
 				if err != nil {

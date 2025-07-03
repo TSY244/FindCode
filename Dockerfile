@@ -8,7 +8,7 @@ RUN apk add --no-cache gcc musl-dev sqlite
 WORKDIR /build
 
 # Set Go proxy
-RUN go env -w GOPROXY=https://goproxy.cn,direct
+RUN go fcFlag -w GOPROXY=https://goproxy.cn,direct
 
 # Copy the Go module files
 COPY go.mod go.sum ./

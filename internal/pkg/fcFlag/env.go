@@ -1,4 +1,4 @@
-package env
+package fcFlag
 
 import (
 	"ScanIDOR/internal/config"
@@ -6,14 +6,15 @@ import (
 )
 
 var (
-	ConfigPath   string
-	RulePath     string
-	LogicDir     string
-	OutputFile   string
-	GoTarget     string
-	AiCycle      int
-	AiConfigPath string
-	AiMode       bool
+	ConfigPath      string
+	RulePath        string
+	LogicDir        string
+	OutputFile      string
+	GoTarget        string
+	AiCycle         int
+	AiConfigPath    string
+	AiMode          bool
+	IsAutoFrameScan bool
 )
 
 var (

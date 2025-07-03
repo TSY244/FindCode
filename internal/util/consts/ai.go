@@ -19,3 +19,7 @@ const (
 const (
 	AiSkEnvKey = "AiSk"
 )
+
+const (
+	ServerMaxCycle = 3
+)

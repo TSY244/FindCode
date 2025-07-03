@@ -1,6 +1,8 @@
 package scanner
 
-import "sync"
+import (
+	"sync"
+)
 
 type Env struct {
 	Result          map[string][]string
@@ -13,6 +15,7 @@ type Env struct {
 	modeJudgeCache  map[string]struct{}
 	AiBoolResult    map[string]AiBoolResultUnit
 	FuncCacheMap    map[string]*cacheUnit
+	AiCycle         int
 }
 
 func NewEnv() *Env {
@@ -45,7 +48,7 @@ var (
 	//JudgedCache 判断过的缓存，有鉴权框架返回存放false
 	JudgedCache = make(map[string]bool)
 
-	// CodeCache
+	// CodeCache 代码的缓存
 	CodeCache = make(map[string][]*cacheUnit)
 
 	// nameJudgedCache 有鉴权框架返回存放false

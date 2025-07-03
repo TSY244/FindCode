@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ScanIDOR/internal/pkg/env"
+	"ScanIDOR/internal/pkg/fcFlag"
 	"ScanIDOR/internal/pkg/server/app"
 	"ScanIDOR/internal/pkg/server/config"
 	"ScanIDOR/utils/util"
@@ -51,7 +51,7 @@ func main() {
 
 func initToken() {
 	token := util.GenerateToken()
-	env.Env["token"] = token
+	fcFlag.Env["token"] = token
 	fileName := "token.txt"
 	file, err := os.Create(fileName)
 	if err != nil {

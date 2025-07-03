@@ -1,5 +1,7 @@
 package consts
 
+import "ScanIDOR/pkg/fingerprint"
+
 const (
 	ruleDir       = "rule/"
 	ginApiYaml    = "find_gin_api.yaml"
@@ -9,8 +11,8 @@ const (
 
 var (
 	TypeMap = map[string]string{
-		"gin":        ruleDir + ginApiYaml,
-		"go_swagger": ruleDir + goSwaggerYaml,
-		"trpc":       ruleDir + trpcYaml,
+		fingerprint.GinPrint:  ruleDir + ginApiYaml,
+		fingerprint.GoSwagger: ruleDir + goSwaggerYaml,
+		fingerprint.TRPCPrint: ruleDir + trpcYaml,
 	}
 )
