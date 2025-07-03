@@ -6,6 +6,11 @@ const (
 	GoSwagger = "goswagger"
 )
 
+// 传入参数的key
+const (
+	ProductPathKey = "productPath"
+)
+
 // 满足其一
 var (
 	GinPrintPackages = []string{

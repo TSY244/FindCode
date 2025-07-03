@@ -3,6 +3,7 @@ package main
 import (
 	"ScanIDOR/internal/config"
 	"ScanIDOR/internal/pkg/fcFlag"
+	"ScanIDOR/internal/pkg/global"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/internal/util/consts"
@@ -30,17 +31,21 @@ func main() {
 	logger.SetDefaultLogger(logger.NewLogger(&conf.LogConf))
 
 	// 加载rule
+	rulePath := fcFlag.RulePath
 	if fcFlag.IsAutoFrameScan {
-		for _, r := range rule.LoadRuleWithFrame(fingerprint.GetProductPrint(fcFlag.LogicDir)) {
-			loadEnv(&r, conf) // 加载环境变量
-			envData := scanner.NewEnv()
-			envData.AiCycle = fcFlag.AiCycle
-			if err := scanner.Scan(fcFlag.LogicDir, &r, envData); err != nil {
-				logger.Fatal(err)
-			}
+		finger, err := fingerprint.GetProductPrint(fcFlag.LogicDir)
+		if err != nil {
+			logger.Fatal(err.Error())
 		}
-	} else {
+		rulePath = global.RuleMap[finger]
+	}
 
+	r := rule.LoadRule(rulePath)
+	loadEnv(&r, conf)
+	envData := scanner.NewEnv()
+	envData.AiCycle = fcFlag.AiCycle
+	if err := scanner.Scan(fcFlag.LogicDir, &r, envData); err != nil {
+		logger.Fatal(err)
 	}
 
 }
