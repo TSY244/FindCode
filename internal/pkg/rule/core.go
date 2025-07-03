@@ -18,3 +18,11 @@ func LoadRuleWithFrame(frames []string) []Rule {
 	}
 	return rules
 }
+
+func LoadRule(configPath string) Rule {
+	var r Rule
+	if err := util.LoadYaml(configPath, &r); err != nil {
+		logger.Fatal(err)
+	}
+	return r
+}

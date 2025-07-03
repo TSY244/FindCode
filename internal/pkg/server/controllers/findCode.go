@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ScanIDOR/internal/pkg/global"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/internal/pkg/server/dtos/requests"
@@ -68,11 +69,11 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 	time.Sleep(2 * time.Second) // 给本地加载文件留时间
 
-	scanType := fingerprint.GetProductPrint(clonePath)
-	rulePath, ok := consts.TypeMap[scanType[0]]
+	scanType, err := fingerprint.GetProductPrint(clonePath)
+	rulePath, ok := global.RuleMap[scanType]
 	if !ok {
 		var msgs []string
-		for k, _ := range consts.TypeMap {
+		for k, _ := range global.RuleMap {
 			msgs = append(msgs, k)
 		}
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
