@@ -189,6 +189,9 @@ func getStartAndEndLine(fset *token.FileSet, desl *ast.FuncDecl) (int, int) {
 // 获取func 的代码
 func getFuncCode(srcStr string, decl *ast.FuncDecl) string {
 	start := decl.Pos()
+	if start != 0 {
+		start = start - 1
+	}
 	end := decl.End()
 	var funcCode string
 	if len(srcStr) < int(start) {

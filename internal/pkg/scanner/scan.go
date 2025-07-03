@@ -448,3 +448,38 @@ func getAllSubCode(decl *ast.FuncDecl, path string, env *Env) ([]string, error) 
 	}
 	return allSubCode, nil
 }
+
+func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, maxLevel uint) ([]string, error) {
+	if level == 0 {
+		return nil, errors.New("level is zero")
+	}
+	if level > maxLevel {
+		return nil, nil
+	}
+	subDecl, names := getAllSubFuncDecls(decl, path)
+	var allSubCode []string
+	for _, sub := range subDecl {
+		funcCode := getFuncCode(path, &sub)
+		if funcCode == "" {
+			continue
+		}
+		if level != consts.FirstLevel {
+			funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		}
+		allSubCode = append(allSubCode, funcCode)
+		// 添加底层的代码
+		nextLevelSubCode, err := getAllSubCodeWithLevel(decl, path, env, level+1, maxLevel)
+		if err != nil {
+			return nil, err
+		}
+		allSubCode = append(allSubCode, nextLevelSubCode...)
+	}
+	for _, name := range names {
+		if units, ok := env.CodeCache[name]; ok {
+			for _, unit := range units {
+				allSubCode = append(allSubCode, string(unit.Code))
+			}
+		}
+	}
+	return allSubCode, nil
+}

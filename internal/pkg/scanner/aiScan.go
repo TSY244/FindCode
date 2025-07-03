@@ -5,6 +5,7 @@ import (
 	"ScanIDOR/internal/pkg/ai/prompt"
 	"ScanIDOR/internal/pkg/ai/respose"
 	result2 "ScanIDOR/internal/pkg/ai/result"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
@@ -89,7 +90,7 @@ func aiScan(config *ai.Config, env2 *Env) error {
 }
 
 func getAllSubFuncCode(api *cacheUnit, path string, env *Env) (string, error) {
-	allSubCodes, err := getAllSubCode(api.FuncAst, path, env)
+	allSubCodes, err := getAllSubCodeWithLevel(api.FuncAst, path, env, consts.FirstLevel, consts.MaxLevel)
 	if err != nil {
 		return "", err
 	}
@@ -98,7 +99,7 @@ func getAllSubFuncCode(api *cacheUnit, path string, env *Env) (string, error) {
 		if len(allSubCode) >= 40000 {
 			break
 		}
-		allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i)
+		allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i+1)
 		allSubCode += fmt.Sprintf("%s\n\n", code)
 	}
 	return allSubCode, nil

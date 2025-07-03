@@ -36,3 +36,8 @@ const (
 	GoSwaggerRule = "rule/find_go_swagger_api.yaml"
 	TrpcRule      = "rule/find_trpc_api.yaml"
 )
+
+const (
+	FirstLevel = 1
+	MaxLevel   = 4
+)
