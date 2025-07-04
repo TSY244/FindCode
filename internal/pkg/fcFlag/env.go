@@ -2,7 +2,6 @@ package fcFlag
 
 import (
 	"ScanIDOR/internal/config"
-	"ScanIDOR/internal/pkg/rule"
 )
 
 var (
@@ -15,10 +14,10 @@ var (
 	AiConfigPath    string
 	AiMode          bool
 	IsAutoFrameScan bool
+	RunMode         string
 )
 
 var (
-	CoreRule *rule.Rule
 	CoreConf *config.Config
 )
 

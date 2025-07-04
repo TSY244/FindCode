@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"ScanIDOR/internal/pkg/fcFlag"
 	"sync"
 )
 
@@ -19,7 +20,7 @@ type Env struct {
 }
 
 func NewEnv() *Env {
-	return &Env{
+	env := &Env{
 		Result:          make(map[string][]string),
 		funcCache:       make(Cache),
 		FuncCacheMap:    make(map[string]*cacheUnit),
@@ -31,6 +32,8 @@ func NewEnv() *Env {
 		modeJudgeCache:  make(map[string]struct{}),
 		AiBoolResult:    make(map[string]AiBoolResultUnit),
 	}
+	env.AiCycle = fcFlag.AiCycle
+	return env
 }
 
 var (

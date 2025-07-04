@@ -145,6 +145,22 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Obj == nil {
 				nameSet[callName] = struct{}{}
+				//return true
+				// debug:
+				//selectorExpr, ok := call.Fun.(*ast.SelectorExpr)
+				//if !ok {
+				//	return true
+				//}
+				//ident := selectorExpr.Sel
+				//if !ok || ident == nil {
+				//	return true
+				//}
+				//if ident.Obj == nil {
+				//	return true
+				//}
+				//if funcDecl, ok := ident.Obj.Decl.(*ast.FuncDecl); ok {
+				//	logger.Debug(funcDecl)
+				//}
 				return true
 			}
 

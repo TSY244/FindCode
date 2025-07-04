@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"ScanIDOR/internal/pkg/fcFlag"
@@ -27,7 +27,7 @@ func init() {
 }
 
 // 使用gin 搭建后段
-func main() {
+func Server() {
 	conf := config.Config{
 		DbConfig: &config.SqliteConfig{
 			FilePath: "data.db",

@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"ScanIDOR/internal/config"
@@ -6,20 +6,18 @@ import (
 	"ScanIDOR/internal/pkg/global"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
-	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/fingerprint"
 	"ScanIDOR/pkg/logger"
 	"fmt"
 	"time"
 )
 
-func main() {
+func Command() {
 	start := time.Now()
 	defer func() {
 		logger.Infof("项目花费时间是: %.3f", time.Since(start).Seconds())
 	}()
 
-	// 解析命令行参数，并且注册到"环境变量中"
 	fcFlag.CheckFlag()
 
 	conf, err := config.Init(fcFlag.ConfigPath)
@@ -32,7 +30,8 @@ func main() {
 
 	// 加载rule
 	rulePath := fcFlag.RulePath
-	if fcFlag.IsAutoFrameScan {
+	if fcFlag.IsAutoFrameScan { // 支持自动框架扫描
+		// 判断使用的框架是什么
 		finger, err := fingerprint.GetProductPrint(fcFlag.LogicDir)
 		if err != nil {
 			logger.Fatal(err.Error())
@@ -40,22 +39,9 @@ func main() {
 		rulePath = global.RuleMap[finger]
 	}
 
-	r := rule.LoadRule(rulePath)
-	loadEnv(&r, conf)
-	envData := scanner.NewEnv()
-	envData.AiCycle = fcFlag.AiCycle
-	if err := scanner.Scan(fcFlag.LogicDir, &r, envData); err != nil {
+	r := rule.LoadRule(rulePath, conf)
+
+	if err := scanner.Scan(fcFlag.LogicDir, &r, scanner.NewEnv()); err != nil {
 		logger.Fatal(err)
-	}
-
-}
-
-func loadEnv(r *rule.Rule, c *config.Config) {
-	if fcFlag.GoTarget != "" {
-		r.GoModeTargetRule.Rule = fcFlag.GoTarget
-	}
-	if fcFlag.AiMode == true {
-		r.Mode = append(r.Mode, consts.AiMode)
-		r.AiConfig = c.AiConfig
 	}
 }
