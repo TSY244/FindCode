@@ -111,7 +111,7 @@ func getAllFilesInDir(path string) ([]os.FileInfo, error) {
 	return files, nil
 }
 
-func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDecl, []string) {
+func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]ast.FuncDecl, []string) {
 	funcDecls := make(map[string]ast.FuncDecl)
 	nameSet := make(map[string]struct{})
 	names := make([]string, 0)
@@ -123,6 +123,7 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 		return nil, nil
 	}
 
+	var subCodeFuncDecls []ast.FuncDecl
 	ast.Inspect(file, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
 		if !ok {
@@ -144,23 +145,14 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 			}
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Obj == nil {
-				nameSet[callName] = struct{}{}
-				//return true
-				// debug:
-				//selectorExpr, ok := call.Fun.(*ast.SelectorExpr)
-				//if !ok {
-				//	return true
-				//}
-				//ident := selectorExpr.Sel
-				//if !ok || ident == nil {
-				//	return true
-				//}
-				//if ident.Obj == nil {
-				//	return true
-				//}
-				//if funcDecl, ok := ident.Obj.Decl.(*ast.FuncDecl); ok {
-				//	logger.Debug(funcDecl)
-				//}
+				// nameSet[callName] = struct{}{}
+				// todo 从CodeCache 拿出函数FuncDecl
+				temp, err := getNameDeclFromCodeCache(callName, env)
+				if err != nil {
+					logger.Error(err.Error())
+					return true
+				}
+				subCodeFuncDecls = append(subCodeFuncDecls, temp...)
 				return true
 			}
 
@@ -173,16 +165,28 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 		return false
 	})
 	for k := range nameSet {
-		//if k == decl.Name.Name || k == "" {
-		//	continue
-		//}
 		if k == "" {
 			continue
 		}
 		names = append(names, k)
 	}
 
+	for _, unit := range subCodeFuncDecls {
+		hashKey := GetFuncAstHash(&unit)
+		funcDecls[hashKey] = unit
+	}
+
 	return funcDecls, names
+}
+
+func getNameDeclFromCodeCache(name string, env *Env) ([]ast.FuncDecl, error) {
+	var ret []ast.FuncDecl
+	if units, ok := env.CodeCache[name]; ok {
+		for _, unit := range units {
+			ret = append(ret, *unit.FuncAst)
+		}
+	}
+	return ret, nil
 }
 
 func getCallName(expr ast.Expr) string {

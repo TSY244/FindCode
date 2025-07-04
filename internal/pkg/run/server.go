@@ -26,7 +26,7 @@ func init() {
 	})
 }
 
-// 使用gin 搭建后段
+// Server 使用gin 搭建后端，FindCode 的server 版本启动入口
 func Server() {
 	conf := config.Config{
 		DbConfig: &config.SqliteConfig{
@@ -51,7 +51,7 @@ func Server() {
 
 func initToken() {
 	token := util.GenerateToken()
-	fcFlag.Env["token"] = token
+	fcFlag.Env["token"] = token // todo 需要将这个换成global package
 	fileName := "token.txt"
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -76,5 +76,4 @@ func clearDir() {
 			}
 		}
 	}
-
 }

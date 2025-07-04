@@ -8,8 +8,8 @@ import (
 
 var (
 	runMap = map[string]func(){
-		consts.Command: Command,
-		consts.Server:  Server,
+		consts.Command: Command, // 启动命令行模式
+		consts.Server:  Server,  // 启动server 模式，使用gin 搭建的后端和前端
 	}
 )
 

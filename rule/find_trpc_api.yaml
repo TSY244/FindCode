@@ -29,6 +29,7 @@ func_rule:
             - 'equal("error")'
     recv_type:
       rule: 'endStr("Impl")'
+#      rule: 'true'
     recv_name:
       rule: "true"
   - func_name: # v1 版本trpc
@@ -54,6 +55,7 @@ func_rule:
             - 'equal("error")'
     recv_type:
       rule: 'endStr("Impl")'
+#      rule: 'true'
     recv_name:
       rule: "true"
   - func_name: # $method.ClientStreaming $method.ServerStreaming 和$method.ClientStreaming

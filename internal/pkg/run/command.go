@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Command 之前的ScanIDOR 的启动代码
 func Command() {
 	start := time.Now()
 	defer func() {
