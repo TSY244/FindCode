@@ -6,28 +6,29 @@ import (
 )
 
 type Env struct {
-	Result          map[string][]string
-	funcCache       Cache
-	ApiCache        Cache
-	ApiCacheMap     map[string]*cacheUnit
+	// 存放结果
+	Result map[string][]string
+	//funcCache       Cache
+	ApiCache Cache
+	//ApiCacheMap     map[string]*cacheUnit
 	JudgedCache     map[string]bool
-	CodeCache       map[string][]*cacheUnit
+	NoApiCodeCache  map[string][]*cacheUnit
 	nameJudgedCache map[string]bool
 	modeJudgeCache  map[string]struct{}
 	AiBoolResult    map[string]AiBoolResultUnit
-	FuncCacheMap    map[string]*cacheUnit
+	AllFuncCacheMap map[string]*cacheUnit
 	AiCycle         int
 }
 
 func NewEnv() *Env {
 	env := &Env{
-		Result:          make(map[string][]string),
-		funcCache:       make(Cache),
-		FuncCacheMap:    make(map[string]*cacheUnit),
+		Result: make(map[string][]string),
+		//funcCache:       make(Cache),
+		AllFuncCacheMap: make(map[string]*cacheUnit),
 		ApiCache:        make(Cache),
-		ApiCacheMap:     make(map[string]*cacheUnit),
+		//ApiCacheMap:     make(map[string]*cacheUnit),
 		JudgedCache:     make(map[string]bool),
-		CodeCache:       make(map[string][]*cacheUnit),
+		NoApiCodeCache:  make(map[string][]*cacheUnit),
 		nameJudgedCache: make(map[string]bool),
 		modeJudgeCache:  make(map[string]struct{}),
 		AiBoolResult:    make(map[string]AiBoolResultUnit),

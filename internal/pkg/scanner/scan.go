@@ -245,7 +245,7 @@ func processApi(api cacheUnit, rule *rule.Rule, path string, env *Env) ([]string
 	if ret, err := matchStr(rule.GoModeTargetRule.Rule, string(funcCode)); err != nil {
 		logger.Error(err.Error())
 	} else if ret { // 处理子调用逻辑
-		subRet, err := processFuncDecl(path, api.FuncAst, rule, env)
+		subRet, err := processFuncDecl(api.FilePath, api.FuncAst, rule, env)
 		if err != nil {
 			return nil, err
 		}
@@ -297,7 +297,7 @@ func processSubFuncDecl(subFuncDecl ast.FuncDecl, rule *rule.Rule, path string, 
 		return cacheRet, nil
 	}
 
-	unit, ok := env.FuncCacheMap[hashKey]
+	unit, ok := env.AllFuncCacheMap[hashKey]
 	if !ok {
 		if unit == nil {
 			return false, nil
@@ -316,7 +316,7 @@ func processSubFuncDecl(subFuncDecl ast.FuncDecl, rule *rule.Rule, path string, 
 		logger.Error(err.Error())
 	} else if ret {
 		env.JudgedCache[hashKey] = true
-		subRet, err := processFuncDecl(path, &subFuncDecl, rule, env)
+		subRet, err := processFuncDecl(unit.FilePath, &subFuncDecl, rule, env)
 		if err != nil {
 			return false, err
 		} else if subRet {
@@ -340,7 +340,7 @@ func processNameDecl(name string, rule *rule.Rule, path string, env *Env) (bool,
 		// 包含了鉴权框架
 		return false, nil
 	}
-	if units, ok := env.CodeCache[name]; ok {
+	if units, ok := env.NoApiCodeCache[name]; ok {
 		for _, unit := range units {
 
 			// ------------
@@ -407,7 +407,7 @@ func scanDecls(asts []ast.Decl, f func(decl *ast.FuncDecl)) {
 //		allSubCode = append(allSubCode, funcCode)
 //	}
 //	for _, name := range names {
-//		if units, ok := env.CodeCache[name]; ok {
+//		if units, ok := env.NoApiCodeCache[name]; ok {
 //			for _, unit := range units {
 //				allSubCode = append(allSubCode, string(unit.Code))
 //			}
@@ -427,7 +427,7 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 	var allSubCode []string
 	for _, sub := range subDecl {
 		hashKey := GetFuncAstHash(&sub)
-		funcInfo, ok := env.FuncCacheMap[hashKey]
+		funcInfo, ok := env.AllFuncCacheMap[hashKey]
 		if !ok {
 			continue
 		}
@@ -448,14 +448,14 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 		}
 		allSubCode = append(allSubCode, funcCode)
 		// 添加底层的代码
-		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, path, env, level+1, maxLevel)
+		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, funcInfo.FilePath, env, level+1, maxLevel)
 		if err != nil {
 			return nil, err
 		}
 		allSubCode = append(allSubCode, nextLevelSubCode...)
 	}
 	for _, name := range names {
-		if units, ok := env.CodeCache[name]; ok {
+		if units, ok := env.NoApiCodeCache[name]; ok {
 			for _, unit := range units {
 				allSubCode = append(allSubCode, string(unit.Code))
 			}

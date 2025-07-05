@@ -26,8 +26,8 @@ func savaNoApiFunc(filePath string, decl *ast.FuncDecl, srcStr string, fset *tok
 		Code:     []byte(code),
 		FilePath: filePath,
 	}
-	env.FuncCacheMap[hashKey] = &unit
-	env.CodeCache[decl.Name.Name] = append(env.CodeCache[decl.Name.Name], &unit)
+	env.AllFuncCacheMap[hashKey] = &unit
+	env.NoApiCodeCache[decl.Name.Name] = append(env.NoApiCodeCache[decl.Name.Name], &unit)
 }
 
 // saveApiFunc 保存api 函数
@@ -41,9 +41,10 @@ func saveApiFunc(filePath, srcStr string,
 
 	apis := env.ApiCache[filePath]
 	apis = append(apis, cacheUnit{
-		FuncAst: decl,
-		Code:    code,
-		Fset:    fset,
+		FuncAst:  decl,
+		Code:     code,
+		Fset:     fset,
+		FilePath: filePath,
 	})
 	env.ApiCache[filePath] = apis
 	return nil

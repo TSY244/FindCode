@@ -146,7 +146,7 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]a
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Obj == nil {
 				// nameSet[callName] = struct{}{}
-				// todo 从CodeCache 拿出函数FuncDecl
+				//todo 从CodeCache 拿出函数FuncDecl
 				temp, err := getNameDeclFromCodeCache(callName, env)
 				if err != nil {
 					logger.Error(err.Error())
@@ -181,7 +181,7 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]a
 
 func getNameDeclFromCodeCache(name string, env *Env) ([]ast.FuncDecl, error) {
 	var ret []ast.FuncDecl
-	if units, ok := env.CodeCache[name]; ok {
+	if units, ok := env.NoApiCodeCache[name]; ok {
 		for _, unit := range units {
 			ret = append(ret, *unit.FuncAst)
 		}
