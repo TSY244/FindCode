@@ -5,7 +5,6 @@ import (
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
-
 	"errors"
 	"fmt"
 	"go/ast"
@@ -71,47 +70,6 @@ func Scan(path string, r *rule.Rule, env *Env) error {
 	logger.Info("模块已经扫描结束")
 	return nil
 }
-
-//
-//func ScanWithCtx(path string, r *rule.Rule) error {
-//	if r == nil {
-//		return errors.New("r is nil")
-//	}
-//	//LoadCtx(ctx, r)
-//
-//	info, err := checkFileStatue(path)
-//	if err != nil {
-//		return err
-//	}
-//	// 根据文件类型启动不同的扫描逻辑
-//	if info.IsDir() {
-//		if err := dealDir(path, r, consts.BeginLevel); err != nil {
-//			return err
-//		}
-//	} else {
-//		if err := dealFile(path, r); err != nil {
-//			return err
-//		}
-//	}
-//	if isUseMode(r, consts.GoMode) {
-//		isUsedGoMode = true
-//		if err := processFuncDecls(r); err != nil {
-//			return err
-//		}
-//	}
-//
-//	// 判断是否使用ai mode
-//	if isUseMode(r, consts.AiMode) {
-//		if err := aiScan(r.AiConfig); err != nil {
-//			return err
-//		}
-//	}
-//
-//	SaveToFile(r.TaskName)
-//	printResult(Result)
-//	logger.Info("模块已经扫描结束")
-//	return nil
-//}
 
 func isUseMode(rule *rule.Rule, target string) bool {
 	for _, r := range rule.Mode {
@@ -218,7 +176,7 @@ func processFile(filePath string, rule *rule.Rule, env *Env) error {
 		return err
 	}
 
-	//func 定义了对函数的处理逻辑
+	//func 定义了对 解析的函数节点 的处理逻辑
 	scanDecls(fileAst.Decls, func(decl *ast.FuncDecl) {
 		// 处理的是，将api func 和 非api func 补充到chache
 		ret, err := filter(decl, rule)
@@ -226,20 +184,22 @@ func processFile(filePath string, rule *rule.Rule, env *Env) error {
 		if !errors.Is(err, ArgsSizeNotEqualErr) && !errors.Is(err, FuncParamsNotEqualErr) && err != nil {
 			return
 		}
-		if rule.Path.Rule != "" {
+		// path 是否存在规则, 如果有则对path 进行判断，
+		if rule.Path.Rule != "" && rule.Path.Rule != "true" {
 			if subRet, err := matchStr(rule.Path.Rule, filePath); err != nil {
 				return
 			} else if !subRet {
 				ret = false
 			}
 		}
+
 		if ret {
 			if err := saveApiFunc(filePath, srcStr, decl, fset, env); err != nil {
 				logger.Error(err.Error())
 				return
 			}
 		} else {
-			savaNoApiFunc(decl, srcStr, fset, env)
+			savaNoApiFunc(filePath, decl, srcStr, fset, env)
 		}
 	})
 	return nil
@@ -304,17 +264,17 @@ func processApi(api cacheUnit, rule *rule.Rule, path string, env *Env) ([]string
 // processFuncDecl 返回true 表示没有鉴权框架
 func processFuncDecl(path string, decl *ast.FuncDecl, rule *rule.Rule, env *Env) (bool, error) {
 	// 1. 获取所有的子调用的函数名字
-	allSubFuncDecls, names := getAllSubFuncDecls(decl, path)
+	allSubFuncDecls, _ := getAllSubFuncDecls(decl, path, env)
 
 	// 2. 无法获取funcdecl 的子调用，通过name 进行判断
 	// todo： 和funcdecl 分开统计
-	for _, name := range names {
-		if ret, err := processNameDecl(name, rule, path, env); err != nil {
-			return false, err
-		} else if !ret {
-			return false, nil
-		}
-	}
+	//for _, name := range names {
+	//	if ret, err := processNameDecl(name, rule, path, env); err != nil {
+	//		return false, err
+	//	} else if !ret {
+	//		return false, nil
+	//	}
+	//}
 
 	// 统计funcdecl 的调用逻辑
 	for _, subFuncDecl := range allSubFuncDecls {
@@ -382,6 +342,13 @@ func processNameDecl(name string, rule *rule.Rule, path string, env *Env) (bool,
 	}
 	if units, ok := env.CodeCache[name]; ok {
 		for _, unit := range units {
+
+			// ------------
+			// 测试code Name 代码拿funcdelc
+			//subCode, names := getAllSubFuncDecls(unit.FuncAst, unit.FilePath)
+			//fmt.Println(subCode, names)
+			// ------------
+
 			hashValue := GetFuncAstHash(unit.FuncAst)
 			if ret, ok := env.JudgedCache[hashValue]; ok {
 				if ret {
@@ -429,15 +396,63 @@ func scanDecls(asts []ast.Decl, f func(decl *ast.FuncDecl)) {
 }
 
 // 获取当前func 底层的被调用者的函数
-func getAllSubCode(decl *ast.FuncDecl, path string, env *Env) ([]string, error) {
-	subDecl, names := getAllSubFuncDecls(decl, path)
+//func getAllSubCode(decl *ast.FuncDecl, path string, env *Env) ([]string, error) {
+//	subDecl, names := getAllSubFuncDecls(decl, path)
+//	var allSubCode []string
+//	for _, sub := range subDecl {
+//		funcCode := getFuncCode(path, &sub)
+//		if funcCode == "" {
+//			continue
+//		}
+//		allSubCode = append(allSubCode, funcCode)
+//	}
+//	for _, name := range names {
+//		if units, ok := env.CodeCache[name]; ok {
+//			for _, unit := range units {
+//				allSubCode = append(allSubCode, string(unit.Code))
+//			}
+//		}
+//	}
+//	return allSubCode, nil
+//}
+
+func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, maxLevel uint) ([]string, error) {
+	if level == 0 {
+		return nil, errors.New("level is zero")
+	}
+	if level > maxLevel {
+		return nil, nil
+	}
+	subDecl, names := getAllSubFuncDecls(decl, path, env)
 	var allSubCode []string
 	for _, sub := range subDecl {
-		funcCode := getFuncCode(path, &sub)
-		if funcCode == "" {
+		hashKey := GetFuncAstHash(&sub)
+		funcInfo, ok := env.FuncCacheMap[hashKey]
+		if !ok {
 			continue
 		}
+		//funcCode := getFuncCode(funcInfo.FilePath, &sub)
+		//if funcCode == "" {
+		//	continue
+		//}
+		//funcCodeEncrypted := funcInfo.Code
+		//funcCodeBytes, err := util.Decompress(funcCodeEncrypted)
+		//if err != nil {
+		//	logger.Error(err.Error())
+		//	continue
+		//}
+		//funcCode := string(funcCodeBytes)
+		funcCode := string(funcInfo.Code)
+		if level != consts.FirstLevel {
+			funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		}
 		allSubCode = append(allSubCode, funcCode)
+		// 添加底层的代码
+		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, path, env, level+1, maxLevel)
+		if err != nil {
+			return nil, err
+		}
+		allSubCode = append(allSubCode, nextLevelSubCode...)
 	}
 	for _, name := range names {
 		if units, ok := env.CodeCache[name]; ok {
