@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - Release
+      - Develop  # 添加 develop 分支
 
 permissions:
   contents: write
@@ -59,18 +60,9 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          OUTPUT="FindCode-CLI-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -o $OUTPUT ./cmd/cli.go
+          OUTPUT="findcode-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          go build -o $OUTPUT ./cmd/main.go
           echo "CLI_OUTPUT=$OUTPUT" >> $GITHUB_ENV
-
-      - name: Build Server binary
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          OUTPUT="FindCode-Server-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -o $OUTPUT ./cmd/server.go
-          echo "SERVER_OUTPUT=$OUTPUT" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -81,5 +73,19 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            FindCode-CLI-*
-            FindCode-Server-*
+            findcode-*
+
+  compile-develop:
+    if: github.ref == 'refs/heads/develop'  # 仅在 develop 分支上运行
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.8'
+
+      - name: Compile code
+        run: |
+          go build ./cmd/main.go  # 尝试编译代码
