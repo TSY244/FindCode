@@ -3,7 +3,7 @@ name: Auto Release FindCode
 on:
   push:
     branches:
-      - main
+      - Release
 
 permissions:
   contents: write
