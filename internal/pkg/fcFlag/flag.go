@@ -18,7 +18,7 @@ func init() {
 	flag.BoolVar(&AiMode, "ai", false, "-ai true")
 	flag.BoolVar(&IsAutoFrameScan, "auto_frame", true, "-auto_frame true")
 	// 枚举变量 只支持consts.Command 和 consts.Server
-	flag.StringVar(&RunMode, "mode", consts.Server, "-mode server/command")
+	flag.StringVar(&RunMode, "mode", consts.Command, "-mode server/command")
 	flag.Parse()
 }
 
