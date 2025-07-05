@@ -1,0 +1,198 @@
+越权可能的代码有（并非完整go 函数代码，只有部分片段）：
+1.1
+越权id 类漏洞示例：
+func (v *vPageCouponServiceImpl) TakeCoupon(ctx context.Context,
+     req *pb.TakeCouponReq, rsp *pb.TakeCouponRsp) (err error) {
+     ret, err := v.areaLogic.TakeCoupon(ctx, req.GetCouponBatchId()) // 出现ID越权的地方
+     if err != nil {
+          log.ErrorContextf(ctx, \"batchID: %s TakeCoupon err: %v\", req.GetCouponBatchId(), err)
+          return err
+     }
+
+原因： 可能被遍历id，导致隐藏卷被领取
+1.2
+缺少鉴权示例：
+if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
+          return err
+     }
+     attr.Version = m.RevisionVersion + 1
+     // 更新修订
+     if err := commitRevertRevision(ctx, app, attr); err != nil {
+这个代码中没有
+     if err := checkPermssion(ctx, app, m, attr); err != nil {
+          return err
+     }
+
+1.3 
+缺少对资料进行所属判断示例
+if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
+               return resp
+          }
+          clientIds, err := apiManager.s.GetAllClientId()
+          clients, err := HostInfo.GetAgentsByClientIds(apiManager.s.DBM.DB, clientIds)
+          clientInfo := convert2.ArrayCopy(clients, convert2.DbHostinfo2moduleHostinfo)
+          return operations.NewGetGetClientsOK().WithPayload(&models.GetClientsResponse{
+               Clients: clientInfo,
+          })
+没有对client id 判断是否有权限读
+
+
+1.3 
+缺属性校验漏洞示例：
+if param.Req.GetModifySeq() == 0 {
+          return nil
+     }
+
+     // 打卡和作业不允许修改, 接龙和普通收集表都可以修改.
+     if param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_SIGN ||
+          param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_PAPER {
+缺少对文档属性的检查，没有判断该文档是否能改
+完整代码：
+if param.Req.GetModifySeq() == 0 {
+          return nil
+     }
+     // 检查可修改设置是否打开.
+     if !param.Meta.GetEnableModifySubmit() {
+          return errs.New(int(code.Code_ERR_PERMISSION_DENIED), \"modification not enabled\")
+     }
+     // 打卡和作业不允许修改, 接龙和普通收集表都可以修改.
+     if param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_SIGN ||
+          param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_PAPER {
+
+1.4
+越权刷评论漏洞：
+func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCommentReq) error {
+     // 1. 校验图片URL是否合法
+     validURLs := c.cfg.Get().ValidPicURLs
+     for _, item := range req.Comments {
+          for _, pic := range item.PictureList {
+               if !isValidPicURL(pic.GetUrl(), validURLs) {
+                    // 任意一个图片不合法，返回错误
+                    return errors.New(\"picture url invalid\")
+               }
+          }
+     }
+}
+但是没有检查订单信息是否一致
+准确的代码如下：
+func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCommentReq) error {
+     // 1. 校验图片URL是否合法
+     validURLs := c.cfg.Get().ValidPicURLs
+     for _, item := range req.Comments {
+          for _, pic := range item.PictureList {
+               if !isValidPicURL(pic.GetUrl(), validURLs) {
+                    // 任意一个图片不合法，返回错误
+                    return errors.New(\"picture url invalid\")
+               }
+          }
+     }
+}
+     // 2. 校验订单信息是否一致，避免越权刷评论等问题
+     orderInfo, err := c.orderMgr.GetExpressOrder(ctx, req.OrderID)
+     if err != nil {
+          log.ErrorContextf(ctx, \"get express order info fail, orderID:%s, err:%+v\", req.OrderID, err)
+          return err
+     }
+     if err = checkOrderInfo(orderInfo, req); err != nil {
+          return err
+     }
+     return nil
+
+1.5 
+缺少权限校验
+// PostCommentFeed 帖子回复
+// nolint
+func (c *CommentImpl) PostCommentFeed(ctx context.Context, req *pb.PostCommentRequest,
+     rsp *pb.PostCommentResponse) error {
+     // 1. 发表接口开关检查
+     if config.RainbowConfig.CommentSwitch == constant.OFF {
+          return errs.New(errcode.RetErrPubOFF, \"comment switch off\")
+     }
+     // 2. 入参校验
+     if !isValidInput(req) {
+          return errs.Newf(errcode.RetErrInvalidParam, \"input invalid, %s\", strs.Format(req))
+     }
+     // 3. 获取用户登录信息
+     userInfo, err := logicutil.GetUserInfo(ctx)
+     if err != nil {
+          log.ErrorContextf(ctx, \"[Comment] get UseInfo failed, err:<%v>\", err)
+          return errs.Newf(errcode.RetErrLogin, \"get user info failed, err: %+v\", err)
+     }
+     c.vuid = cast.ToString(userInfo.Vuid) // 目前只是对齐弹幕回复，该字段在贴子场景未用上
+     // 4. 数据转换
+     msg.go, ctxMap := transFeedCommentData(ctx, req, userInfo)
+     if msg.go == nil {
+          log.ErrorContextf(ctx, \"[Comment] trans terminal pb to MsgDomainInfo failed,req:<%s>\", strs.Format(req))
+          return errs.Newf(errcode.RetErrPBDecode, \"trans backend protocol failed, %s\", strs.Format(req))
+     }
+     // 5. 检查内容的图片url
+     if err := logicutil.CheckContentPictureURL(msg.go); err != nil {
+          log.ErrorContextf(ctx, \"[Publish] CheckContentPictureURL error, msg.go:%+v, err:%v\", msg.go, err)
+          return errs.Newf(errcode.RetErrPicURL, \"CheckContentPictureURL err:%v\", err)
+     }
+
+正确的代码如下：
+应该添加
+     // 3.1 权限校验
+     if err := publishFeedPermission(ctx, userInfo); err != nil {
+          return err
+     }
+
+// publishFeedPermission 是否有发表的权限
+func publishFeedPermission(ctx context.Context, user *unionmodel.UserCpInfo) error {
+     // 用户发表类型为创作号，检查创作号的准确性
+     vcuid, creatorStatus := logicutil.GetVcuid(ctx)
+     if vcuid != \"\" && creatorStatus != \"\" && vcuid != user.Vcuid {
+          logger.ErrorF(\"[publishFeedPermission] vcuid data inconsistency, ctx vcuid(%s) user vcuid(%s)\",
+               vcuid, user.Vcuid)
+          return errs.Newf(errcode.RetErrInvalidParam, \"vcuid data inconsistency, ctx vcuid(%s) user vcuid(%s)\",
+               vcuid, user.Vcuid)
+     }
+
+     return nil
+}
+1.6 
+vuid助力作为参数，没有加密。黑产可通过用遍历vuid的方式来助力进而获得奖励。
+case ShareAndAssist:
+               errCode = ShareAssistByGuest(ctx, req, assistVuseridCode, assistVuserid, vuserid, actEndTime, reportData, actID, isPrepublish, modID)
+          case ShareStatus:
+               id, err := clients.DeCode(ctx, assistVuseridCode)
+          
+               reqParams := ReqParams{
+                    ActID:         req.ActId,
+                    ModID:         req.ModId,
+                    IsPrepublish:  strtoInt32(req.Context.CgiReqData.Query[\"is_prepublish\"]),
+                    Vuserid:       strtoInt64(req.Context.LoginInfo.Vuserid),
+                    MasterVuserid: id,
+               }
+               shareStatus, err := GetShareStatus(ctx, &reqParams)
+               if err != nil {
+                    lo
+                    g.Errorf(\"GetShareStatus err, err = %v\", err)
+正确代码
+case ShareAndAssist:
+               errCode = ShareAssistByGuest(ctx, req, assistVuseridCode, assistVuserid, vuserid, actEndTime, reportData, actID, isPrepublish, modID)
+          case ShareStatus:
+               id, err := clients.DeCode(ctx, assistVuseridCode)
+               if actID >= svrConfig.GraysActID {
+                    if err != nil || cast.ToInt64(id) <= 10000 {
+                         id = \"\"
+                    }
+               } else {
+                    if err != nil || cast.ToInt64(id) <= 10000 {
+                         id = cast.ToString(assistVuserid)
+                    }
+               }
+               masterVuid := cast.ToInt64(id)
+               reqParams := ReqParams{
+                    ActID:         req.ActId,
+                    ModID:         req.ModId,
+                    IsPrepublish:  strtoInt32(req.Context.CgiReqData.Query[\"is_prepublish\"]),
+                    Vuserid:       strtoInt64(req.Context.LoginInfo.Vuserid),
+                    MasterVuserid: masterVuid,
+               }
+               shareStatus, err := GetShareStatus(ctx, &reqParams)
+               if err != nil {
+                    log.Errorf(\"GetShareStatus err, err = %v\", err)
+
+

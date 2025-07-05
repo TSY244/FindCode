@@ -5,7 +5,6 @@ import (
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
-
 	"errors"
 	"fmt"
 	"go/ast"
@@ -427,16 +426,29 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 	subDecl, names := getAllSubFuncDecls(decl, path, env)
 	var allSubCode []string
 	for _, sub := range subDecl {
-		funcCode := getFuncCode(path, &sub)
-		if funcCode == "" {
+		hashKey := GetFuncAstHash(&sub)
+		funcInfo, ok := env.FuncCacheMap[hashKey]
+		if !ok {
 			continue
 		}
+		//funcCode := getFuncCode(funcInfo.FilePath, &sub)
+		//if funcCode == "" {
+		//	continue
+		//}
+		//funcCodeEncrypted := funcInfo.Code
+		//funcCodeBytes, err := util.Decompress(funcCodeEncrypted)
+		//if err != nil {
+		//	logger.Error(err.Error())
+		//	continue
+		//}
+		//funcCode := string(funcCodeBytes)
+		funcCode := string(funcInfo.Code)
 		if level != consts.FirstLevel {
 			funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
 		}
 		allSubCode = append(allSubCode, funcCode)
 		// 添加底层的代码
-		nextLevelSubCode, err := getAllSubCodeWithLevel(decl, path, env, level+1, maxLevel)
+		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, path, env, level+1, maxLevel)
 		if err != nil {
 			return nil, err
 		}

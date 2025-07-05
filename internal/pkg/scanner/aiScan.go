@@ -114,13 +114,13 @@ func getTotalPrompt(config *ai.Config, funcCode, allSubCode string) string {
 		switch size {
 		case 0:
 			//return config.Prompt
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		case 1:
 			totalPrompt = fmt.Sprintf(config.Prompt, funcCode)
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		case 2:
 			totalPrompt = fmt.Sprintf(config.Prompt, funcCode, allSubCode)
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		default:
 			totalPrompt = fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
 		}
@@ -130,7 +130,7 @@ func getTotalPrompt(config *ai.Config, funcCode, allSubCode string) string {
 		}
 	} else {
 		totalPrompt = fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
-		totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+		//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 	}
 	return totalPrompt
 }
