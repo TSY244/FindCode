@@ -1,0 +1,24 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.menu {
+    list-style: none;
+    padding: 0;
+}
+.menu li {
+    margin-bottom: 10px;
+}
+.menu a {
+    display: block;
+    padding: 10px;
+    background-color: #f0f0f0;
+    text-decoration: none;
+    color: #333;
+    border-radius: 4px;
+}
+.menu a:hover {
+    background-color: #e0e0e0;
+}
