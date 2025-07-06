@@ -1,0 +1,41 @@
+
+.content-auto {
+    content-visibility: auto;
+}
+.tooltip-trigger {
+    position: relative;
+}
+.tooltip-content {
+    @apply invisible absolute z-50 bg-neutral-700 text-white text-sm rounded py-2 px-3 shadow-lg opacity-0 transition-all duration-200 w-max max-w-xs;
+}
+.tooltip-trigger:hover .tooltip-content {
+    @apply visible opacity-100;
+}
+.tooltip-content::after {
+    content: "";
+    @apply absolute border-4;
+}
+.tooltip-top::after {
+    @apply top-full left-1/2 -ml-2 border-t-neutral-700 border-r-transparent border-b-transparent border-l-transparent;
+}
+.form-input-focus {
+    @apply ring-2 ring-primary/30 border-primary;
+}
+.checkbox-primary {
+    @apply h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary;
+}
+.code-snippet {
+    @apply bg-neutral-800 text-white p-3 rounded-lg my-2 overflow-hidden transition-all duration-300 hover:shadow-lg;
+}
+.code-snippet-collapsed {
+    @apply max-h-16 cursor-pointer;
+}
+.code-snippet-expanded {
+    @apply max-h-[300px] cursor-pointer;
+}
+.code-snippet-header {
+    @apply flex justify-between items-center mb-2;
+}
+.code-snippet-content {
+    @apply font-mono text-sm overflow-y-auto whitespace-pre;
+}

@@ -53,6 +53,8 @@ func (s *App) initDatabase(c *config.Config) {
 
 func (s *App) Run() {
 	s.router.LoadHTMLGlob("web/templates/*")
+	s.router.Static("/asset", "web/asset")
+	//s.router.Static("/asset/js", "web/asset/js")
 
 	s.router.Run(":8080")
 }
