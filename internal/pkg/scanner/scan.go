@@ -4,6 +4,7 @@ import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
+	"ScanIDOR/pkg/set"
 	"ScanIDOR/utils/util"
 	"errors"
 	"fmt"
@@ -424,9 +425,9 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 		return nil, nil
 	}
 	subDecl, names := getAllSubFuncDecls(decl, path, env)
-	var allSubCode []string
-	for _, sub := range subDecl {
-		hashKey := GetFuncAstHash(&sub)
+	allSubCode := set.NewSet[string]()
+	for hashKey, _ := range subDecl {
+		//hashKey := GetFuncAstHash(&sub)
 		funcInfo, ok := env.AllFuncCacheMap[hashKey]
 		if !ok {
 			continue
@@ -443,23 +444,34 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 		//}
 		//funcCode := string(funcCodeBytes)
 		funcCode := string(funcInfo.Code)
-		if level != consts.FirstLevel {
-			funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		if allSubCode.Contains(funcCode) {
+			continue
 		}
-		allSubCode = append(allSubCode, funcCode)
+		//if level != consts.FirstLevel {
+		//	funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		//}
+		allSubCode.Add(funcCode)
+
 		// 添加底层的代码
 		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, funcInfo.FilePath, env, level+1, maxLevel)
 		if err != nil {
 			return nil, err
 		}
-		allSubCode = append(allSubCode, nextLevelSubCode...)
+		//allSubCode = append(allSubCode, nextLevelSubCode...)
+		allSubCode.AddAll(nextLevelSubCode)
 	}
 	for _, name := range names {
 		if units, ok := env.NoApiCodeCache[name]; ok {
 			for _, unit := range units {
-				allSubCode = append(allSubCode, string(unit.Code))
+				//allSubCode = append(allSubCode, string(unit.Code))
+				hashValue := GetFuncAstHash(unit.FuncAst)
+				if allSubCode.Contains(hashValue) {
+					continue
+				}
+				allSubCode.Add(hashValue)
 			}
 		}
 	}
-	return allSubCode, nil
+
+	return allSubCode.Values(), nil
 }
