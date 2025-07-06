@@ -5,7 +5,7 @@ import (
 	"ScanIDOR/internal/pkg/ai/prompt"
 	"ScanIDOR/internal/pkg/ai/respose"
 	result2 "ScanIDOR/internal/pkg/ai/result"
-	"ScanIDOR/internal/pkg/env"
+	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/internal/util/utils"
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
@@ -15,6 +15,12 @@ import (
 )
 
 type AiBoolResultUnit map[string][]aiBoolUnit
+
+type AiBoolResultUnitWithStatue map[string]aiBoolUnitWithStatue
+type aiBoolUnitWithStatue struct {
+	Statue      int // -1 危险 0 可疑 1 安全
+	AiBoolUnits []aiBoolUnit
+}
 
 type AiResultUnit map[string][]aiStrUnit
 
@@ -54,7 +60,7 @@ func aiScan(config *ai.Config, env2 *Env) error {
 
 			//body := fmt.Sprintf(r.Body, prompt.CheckApiSystem, totalPrompt)
 			r.Body = jsonBody
-			for i := 0; i < env.AiCycle; i++ {
+			for i := 0; i < env2.AiCycle; i++ {
 				var ret respose.DeepseekResp
 				err = r.Send(&ret)
 				if err != nil {
@@ -84,16 +90,16 @@ func aiScan(config *ai.Config, env2 *Env) error {
 }
 
 func getAllSubFuncCode(api *cacheUnit, path string, env *Env) (string, error) {
-	allSubCodes, err := getAllSubCode(api.FuncAst, path, env)
+	allSubCodes, err := getAllSubCodeWithLevel(api.FuncAst, path, env, consts.FirstLevel, consts.MaxLevel)
 	if err != nil {
 		return "", err
 	}
 	var allSubCode string
 	for i, code := range allSubCodes {
-		if len(allSubCode) >= 500 {
+		if len(allSubCode) >= 40000 {
 			break
 		}
-		allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i)
+		allSubCode += fmt.Sprintf("第%d段子调用代码如下：", i+1)
 		allSubCode += fmt.Sprintf("%s\n\n", code)
 	}
 	return allSubCode, nil
@@ -108,13 +114,13 @@ func getTotalPrompt(config *ai.Config, funcCode, allSubCode string) string {
 		switch size {
 		case 0:
 			//return config.Prompt
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		case 1:
 			totalPrompt = fmt.Sprintf(config.Prompt, funcCode)
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		case 2:
 			totalPrompt = fmt.Sprintf(config.Prompt, funcCode, allSubCode)
-			totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+			//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 		default:
 			totalPrompt = fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
 		}
@@ -124,7 +130,7 @@ func getTotalPrompt(config *ai.Config, funcCode, allSubCode string) string {
 		}
 	} else {
 		totalPrompt = fmt.Sprintf(prompt.CheckApiPrompt, funcCode, allSubCode)
-		totalPrompt = strings.Replace(totalPrompt, "\n", ";", -1)
+		//totalPrompt = strings.Replace(totalPrompt, "\n", "", -1)
 	}
 	return totalPrompt
 }
@@ -137,6 +143,13 @@ func saveToAiResult(path string, jsonRet result2.JsonResult, api cacheUnit, conf
 				Reason: jsonRet.Reason,
 			})
 			resultMap[api.FuncAst.Name.Name] = units
+		} else {
+			resultMap[api.FuncAst.Name.Name] = []aiBoolUnit{
+				{
+					Result: jsonRet.Result,
+					Reason: jsonRet.Reason,
+				},
+			}
 		}
 	} else {
 		env.AiBoolResult[path] = map[string][]aiBoolUnit{

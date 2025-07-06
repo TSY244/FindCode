@@ -111,7 +111,7 @@ func getAllFilesInDir(path string) ([]os.FileInfo, error) {
 	return files, nil
 }
 
-func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDecl, []string) {
+func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]ast.FuncDecl, []string) {
 	funcDecls := make(map[string]ast.FuncDecl)
 	nameSet := make(map[string]struct{})
 	names := make([]string, 0)
@@ -123,6 +123,7 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 		return nil, nil
 	}
 
+	var subCodeFuncDecls []ast.FuncDecl
 	ast.Inspect(file, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
 		if !ok {
@@ -144,7 +145,14 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 			}
 			ident, ok := call.Fun.(*ast.Ident)
 			if !ok || ident.Obj == nil {
-				nameSet[callName] = struct{}{}
+				// nameSet[callName] = struct{}{}
+				//todo 从CodeCache 拿出函数FuncDecl
+				temp, err := getNameDeclFromCodeCache(callName, env)
+				if err != nil {
+					logger.Error(err.Error())
+					return true
+				}
+				subCodeFuncDecls = append(subCodeFuncDecls, temp...)
 				return true
 			}
 
@@ -157,16 +165,28 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string) (map[string]ast.FuncDec
 		return false
 	})
 	for k := range nameSet {
-		//if k == decl.Name.Name || k == "" {
-		//	continue
-		//}
 		if k == "" {
 			continue
 		}
 		names = append(names, k)
 	}
 
+	for _, unit := range subCodeFuncDecls {
+		hashKey := GetFuncAstHash(&unit)
+		funcDecls[hashKey] = unit
+	}
+
 	return funcDecls, names
+}
+
+func getNameDeclFromCodeCache(name string, env *Env) ([]ast.FuncDecl, error) {
+	var ret []ast.FuncDecl
+	if units, ok := env.NoApiCodeCache[name]; ok {
+		for _, unit := range units {
+			ret = append(ret, *unit.FuncAst)
+		}
+	}
+	return ret, nil
 }
 
 func getCallName(expr ast.Expr) string {
@@ -189,6 +209,9 @@ func getStartAndEndLine(fset *token.FileSet, desl *ast.FuncDecl) (int, int) {
 // 获取func 的代码
 func getFuncCode(srcStr string, decl *ast.FuncDecl) string {
 	start := decl.Pos()
+	if start != 0 {
+		start = start - 1
+	}
 	end := decl.End()
 	var funcCode string
 	if len(srcStr) < int(start) {
@@ -252,14 +275,14 @@ func LoadCtx(ctx context.Context, r *rule.Rule) {
 
 }
 
-func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnit) {
+func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]AiBoolResultUnitWithStatue) {
 	if strings.HasPrefix(clonePath, "./") {
 		clonePath = strings.Replace(clonePath, "./", "", 1)
 	}
 	locker.RLock()
 	defer locker.RUnlock()
 	ret := make(map[string][]string)
-	boolRet := make(map[string]AiBoolResultUnit)
+	boolRet := make(map[string]AiBoolResultUnitWithStatue)
 	for k, v := range env.Result {
 		if strings.HasPrefix(k, clonePath) {
 			ret[k] = v
@@ -267,10 +290,39 @@ func GetResult(clonePath string, env *Env) (*map[string][]string, *map[string]Ai
 	}
 	for k, v := range env.AiBoolResult {
 		if strings.HasPrefix(k, clonePath) {
-			boolRet[k] = v
+			boolRet[k] = getAiBoolResultUnitWithStatue(&v)
 		}
 	}
 	return &ret, &boolRet
+}
+
+func getAiBoolResultUnitWithStatue(aiBoolResultUnit *AiBoolResultUnit) AiBoolResultUnitWithStatue {
+	aiBoolResult := make(AiBoolResultUnitWithStatue)
+	for k, v := range *aiBoolResultUnit {
+		aiBoolResult[k] = aiBoolUnitWithStatue{
+			Statue:      getStatue(&v),
+			AiBoolUnits: v,
+		}
+	}
+	return aiBoolResult
+}
+
+func getStatue(abus *[]aiBoolUnit) int {
+	var statue int
+	size := len(*abus)
+	for _, unit := range *abus {
+		if unit.Result == "true" {
+			statue++
+		} else if unit.Result == "false" {
+			statue--
+		}
+	}
+	if statue == size {
+		return 1
+	} else if statue == -size {
+		return -1
+	}
+	return 0
 }
 
 func ClearResult(clonePath string, env *Env) {
@@ -289,4 +341,13 @@ func ClearResult(clonePath string, env *Env) {
 			delete(env.AiBoolResult, k)
 		}
 	}
+}
+
+func GetContainsRule(strs []string) string {
+	var allFuncs []string
+	for _, str := range strs {
+		allFuncs = append(allFuncs, "contain("+str+")")
+	}
+	ruleStr := strings.Join(allFuncs, " || ")
+	return "! " + ruleStr
 }

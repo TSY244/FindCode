@@ -29,3 +29,15 @@ const (
 	AiConfigKey     = "aiConfig"
 	IsReturnBoolKey = "isReturnBool"
 )
+
+// 用于指定file path
+const (
+	GinRule       = "rule/find_gin_api.yaml"
+	GoSwaggerRule = "rule/find_go_swagger_api.yaml"
+	TrpcRule      = "rule/find_trpc_api.yaml"
+)
+
+const (
+	FirstLevel = 1
+	MaxLevel   = 4
+)

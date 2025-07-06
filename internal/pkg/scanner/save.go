@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"ScanIDOR/internal/pkg/env"
+	"ScanIDOR/internal/pkg/fcFlag"
 	"ScanIDOR/pkg/logger"
 	"bufio"
 	"fmt"
@@ -17,8 +17,8 @@ func SaveToFile(taskName string, env2 *Env) {
 	}
 	var fileName string
 
-	if env.OutputFile != "" {
-		fileName = resultDir + env.OutputFile
+	if fcFlag.OutputFile != "" {
+		fileName = fcFlag.OutputFile
 	} else {
 		timestamp := fmt.Sprintf("%d", time.Now().Unix())
 		fileName = resultDir + taskName + "_" + timestamp + ".txt"
@@ -76,9 +76,7 @@ func SaveAiResult(env *Env) {
 			if err != nil {
 				logger.Errorf("save file %s failed.\n", fileName)
 			}
-			defer file.Close()
 			writer := bufio.NewWriter(file)
-			defer writer.Flush()
 			var msg string
 			msg = path + " 结果如下:\n" + "funcName: " + funcName + "\n"
 			for i, unit := range units {
@@ -89,6 +87,8 @@ func SaveAiResult(env *Env) {
 			if err != nil {
 				logger.Errorf("save file %s failed.\n", fileName)
 			}
+			file.Close()
+			writer.Flush()
 		}
 	}
 }

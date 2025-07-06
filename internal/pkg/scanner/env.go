@@ -1,33 +1,40 @@
 package scanner
 
-import "sync"
+import (
+	"ScanIDOR/internal/pkg/fcFlag"
+	"sync"
+)
 
 type Env struct {
-	Result          map[string][]string
-	funcCache       Cache
-	ApiCache        Cache
-	ApiCacheMap     map[string]*cacheUnit
+	// 存放结果
+	Result map[string][]string
+	//funcCache       Cache
+	ApiCache Cache
+	//ApiCacheMap     map[string]*cacheUnit
 	JudgedCache     map[string]bool
-	CodeCache       map[string][]*cacheUnit
+	NoApiCodeCache  map[string][]*cacheUnit
 	nameJudgedCache map[string]bool
 	modeJudgeCache  map[string]struct{}
 	AiBoolResult    map[string]AiBoolResultUnit
-	FuncCacheMap    map[string]*cacheUnit
+	AllFuncCacheMap map[string]*cacheUnit
+	AiCycle         int
 }
 
 func NewEnv() *Env {
-	return &Env{
-		Result:          make(map[string][]string),
-		funcCache:       make(Cache),
-		FuncCacheMap:    make(map[string]*cacheUnit),
+	env := &Env{
+		Result: make(map[string][]string),
+		//funcCache:       make(Cache),
+		AllFuncCacheMap: make(map[string]*cacheUnit),
 		ApiCache:        make(Cache),
-		ApiCacheMap:     make(map[string]*cacheUnit),
+		//ApiCacheMap:     make(map[string]*cacheUnit),
 		JudgedCache:     make(map[string]bool),
-		CodeCache:       make(map[string][]*cacheUnit),
+		NoApiCodeCache:  make(map[string][]*cacheUnit),
 		nameJudgedCache: make(map[string]bool),
 		modeJudgeCache:  make(map[string]struct{}),
 		AiBoolResult:    make(map[string]AiBoolResultUnit),
 	}
+	env.AiCycle = fcFlag.AiCycle
+	return env
 }
 
 var (
@@ -45,7 +52,7 @@ var (
 	//JudgedCache 判断过的缓存，有鉴权框架返回存放false
 	JudgedCache = make(map[string]bool)
 
-	// CodeCache
+	// CodeCache 代码的缓存
 	CodeCache = make(map[string][]*cacheUnit)
 
 	// nameJudgedCache 有鉴权框架返回存放false

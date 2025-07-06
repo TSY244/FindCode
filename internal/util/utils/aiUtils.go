@@ -29,6 +29,19 @@ var (
 	}
 )
 
+func GetDefaultAiConfig(model string) *ai.Config {
+	return &ai.Config{
+		Model:  model,
+		Method: "POST",
+		URL:    "http://v2.open.venus.oa.com/llmproxy/chat/completions",
+		Headers: map[string]string{
+			"Content-Type":  "application/json",
+			"Authorization": "Bearer %s",
+		},
+		Body: "{\n      \"model\": \"" + model + "\",\n      \"messages\": [\n  \n      ],\n      \"stream\": false\n    }",
+	}
+}
+
 func GetChatRequest(config *ai.Config) *request.ChatRequest {
 	return &request.ChatRequest{
 		URL:     config.URL,
@@ -51,20 +64,20 @@ func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string, config *ai.C
 	if err := json.Unmarshal([]byte(r.Body), &deepseekreq); err != nil {
 		logger.Error(err)
 	}
-	var msgs []request.DeepseekMessage
+	var msgs []request.OpenAiMessage
 	if !config.IsUseAiPrompt {
-		msgs = append(msgs, request.DeepseekMessage{
+		msgs = append(msgs, request.OpenAiMessage{
 			Role:    "system",
 			Content: prompt.CheckApiSystem,
 		})
 	} else {
-		msgs = append(msgs, request.DeepseekMessage{
+		msgs = append(msgs, request.OpenAiMessage{
 			Role:    "system",
 			Content: prompt.JsonSystem,
 		})
 	}
 
-	msgs = append(msgs, request.DeepseekMessage{
+	msgs = append(msgs, request.OpenAiMessage{
 		Role:    "user",
 		Content: totalPrompt,
 	})
@@ -87,9 +100,9 @@ func GetAiBody(model string) (string, error) {
 
 func GetAiConfig(model string) (*ai.Config, error) {
 	switch model {
-	case consts.DeepseekKey:
+	case consts.OpenAIKey:
 		return &deepSeekAiConfig, nil
 	default:
-		return nil, errors.New("receiver error")
+		return GetDefaultAiConfig(model), nil
 	}
 }

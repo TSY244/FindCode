@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"ScanIDOR/internal/pkg/global"
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/pkg/scanner"
 	"ScanIDOR/internal/pkg/server/dtos/requests"
 	"ScanIDOR/internal/pkg/server/services"
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/internal/util/utils"
+	"ScanIDOR/pkg/fingerprint"
 	"ScanIDOR/pkg/logger"
 	util2 "ScanIDOR/utils/util"
 	"github.com/gin-gonic/gin"
@@ -38,25 +40,21 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 
 	gitUrl := request.GitURL
-	scanType := request.Type
+	//scanType := request.Type
 	isUseAi := request.IsUseAi
-
-	rulePath, ok := consts.TypeMap[scanType]
-	if !ok {
-		var msgs []string
-		for k, _ := range consts.TypeMap {
-			msgs = append(msgs, k)
+	authenticationCodes := request.AuthenticationCodes
+	temp := make([]string, 0)
+	for _, str := range authenticationCodes {
+		if "" == str || "[]" == str {
+			continue
 		}
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "type 出错。type 只支持：" + strings.Join(msgs, ","),
-			"go.error": "",
-		})
-		return
+		temp = append(temp, str)
 	}
+	authenticationCodes = temp
 
 	if ret := util2.CheckGitUrl(gitUrl); !ret {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "gitUrl 出错：" + gitUrl,
+			"msg.go":   "gitUrl 出错：" + gitUrl,
 			"go.error": "",
 		})
 		return
@@ -64,12 +62,26 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	clonePath, err := util2.CloneRepository(c, gitUrl)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "clone 失败 gitUrl:" + gitUrl,
+			"msg.go":   "clone 失败 gitUrl:" + gitUrl,
 			"go.error": err.Error(),
 		})
 		return
 	}
 	time.Sleep(2 * time.Second) // 给本地加载文件留时间
+
+	scanType, err := fingerprint.GetProductPrint(clonePath)
+	rulePath, ok := global.RuleMap[scanType]
+	if !ok {
+		var msgs []string
+		for k, _ := range global.RuleMap {
+			msgs = append(msgs, k)
+		}
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"msg.go":   "type 出错。type 只支持：" + strings.Join(msgs, ","),
+			"go.error": "",
+		})
+		return
+	}
 
 	defer func() {
 		os.RemoveAll(clonePath)
@@ -79,7 +91,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	if err := util2.LoadYaml(rulePath, &r); err != nil {
 		logger.Fatal(err)
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "rule.yaml 出错：" + rulePath,
+			"msg.go":   "rule.yaml 出错：" + rulePath,
 			"go.error": "",
 		})
 		return
@@ -98,7 +110,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 		aiConfig, err := utils.GetAiConfig(request.Model)
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"msg":      "aiConfig 出错：" + rulePath,
+				"msg.go":   "aiConfig 出错：" + rulePath,
 				"go.error": "",
 			})
 			return
@@ -112,10 +124,15 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 
 	env := scanner.NewEnv()
+	env.AiCycle = consts.ServerMaxCycle
+
+	if len(authenticationCodes) != 0 {
+		r.GoModeTargetRule.Rule = scanner.GetContainsRule(authenticationCodes)
+	}
 
 	if err := scanner.Scan(clonePath, &r, env); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "扫描失败",
+			"msg.go":   "扫描失败",
 			"go.error": err.Error(),
 		})
 		return
@@ -125,7 +142,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 
 	if isUseAi {
 		c.HTML(http.StatusOK, "ai_results.html", gin.H{
-			"msg":          "扫描成功",
+			"msg.go":       "扫描成功",
 			"result":       boolRet,
 			"isReturnBool": !request.IsUseAiPrompt || request.IsReturnBool,
 		})
@@ -133,7 +150,7 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "results.html", gin.H{
-		"msg":    "扫描成功",
+		"msg.go": "扫描成功",
 		"result": ret, // 传递结果给模板
 	})
 

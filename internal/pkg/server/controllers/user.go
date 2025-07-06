@@ -20,7 +20,7 @@ func (u *UserController) AddUser(c *gin.Context) {
 	req := requests.AddUserRequest{}
 	if err := c.ShouldBind(&req); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "参数错误",
+			"msg.go":   "参数错误",
 			"go.error": "",
 		})
 		return
@@ -32,13 +32,13 @@ func (u *UserController) AddUser(c *gin.Context) {
 	}
 	if err := u.userService.AddUser(c, &param); err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"msg":      "添加用户失败",
+			"msg.go":   "添加用户失败",
 			"go.error": err.Error(),
 		})
 		return
 	}
 	c.HTML(http.StatusOK, "success.html", gin.H{
-		"msg": "添加用户成功",
+		"msg.go": "添加用户成功",
 	})
 }
 
