@@ -47,3 +47,12 @@ body {
     margin-top: 5px;
     font-size: 0.9em;
 }
+.status-danger {
+    color: red;
+}
+.status-suspicious {
+    color: #B8860B;
+}
+.status-safe {
+    color: green;
+}
