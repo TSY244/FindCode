@@ -253,7 +253,7 @@ func processApi(api cacheUnit, rule *rule.Rule, path string, env *Env) ([]string
 		if subRet {
 			// 可能存在问题的，统一保存
 			hashValue := GetFuncAstHash(api.FuncAst)
-			env.JudgedCache[hashValue] = true
+			env.JudgedCache[hashValue] = consts.MeetTheRules
 			startLine, endLine := getStartAndEndLine(api.Fset, api.FuncAst)
 			result := fmt.Sprintf("%d:%d:%s", startLine, endLine, api.FuncAst.Name.Name)
 			idors = append(idors, result)
@@ -280,12 +280,12 @@ func processFuncDecl(path string, decl *ast.FuncDecl, rule *rule.Rule, env *Env)
 	// 统计funcdecl 的调用逻辑
 	for _, subFuncDecl := range allSubFuncDecls {
 		if ret, err := processSubFuncDecl(subFuncDecl, rule, path, env); err != nil {
-			return false, err
+			return consts.NoMeetTheRules, err
 		} else if !ret {
-			return false, nil
+			return consts.NoMeetTheRules, nil
 		}
 	}
-	return true, nil
+	return consts.MeetTheRules, nil
 }
 
 // processSubFuncDecl 处理函数调用的子函数的
@@ -300,16 +300,30 @@ func processSubFuncDecl(subFuncDecl ast.FuncDecl, rule *rule.Rule, path string, 
 
 	unit, ok := env.AllFuncCacheMap[hashKey]
 	if !ok {
-		if unit == nil {
+		noApiCache, ok := env.NoApiCodeCache[subFuncDecl.Name.Name]
+		if !ok {
 			return false, nil
 		}
-		name := unit.FuncAst.Name.Name
-		if ret, err := processNameDecl(name, rule, path, env); err != nil {
-			return false, err
-		} else if !ret {
-			return false, nil
+		for _, noapis := range noApiCache {
+			if noapis.FilePath == path {
+				unit = noapis
+			}
 		}
-		return true, nil
+		hashKey = GetFuncAstHash(unit.FuncAst)
+		//
+		//if unit == nil {
+		//	return false, nil
+		//}
+		//name := unit.FuncAst.Name.Name
+		//if ret, err := processNameDecl(name, rule, path, env); err != nil {
+		//	return false, err
+		//} else if !ret {
+		//	return false, nil
+		//}
+		//return true, nil
+	}
+	if unit == nil {
+		return consts.MeetTheRules, nil
 	}
 
 	funcCode := unit.Code

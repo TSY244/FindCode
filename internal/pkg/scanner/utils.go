@@ -26,6 +26,9 @@ func GetFuncAstHash(funcAst *ast.FuncDecl) string {
 	paramTypes, _ := getFuncParamTypes(funcAst)
 	rawSplice := append(paramNames, paramTypes...)
 	rawSplice = append(rawSplice, name)
+	rawSplice = append(rawSplice, fmt.Sprintf("pos:%v", funcAst.Body.Pos()))
+	rawSplice = append(rawSplice, fmt.Sprintf("end:%v", funcAst.Body.End()))
+	rawSplice = append(rawSplice, fmt.Sprintf("lists:%v", funcAst.Body.List))
 	rawStr := strings.Join(rawSplice, "&")
 	// 求字符串的hash值
 	hasher := sha256.New()
