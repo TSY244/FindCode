@@ -41,3 +41,8 @@ const (
 	FirstLevel = 1
 	MaxLevel   = 4
 )
+
+const (
+	MeetTheRules   = true  // 满足规则，可能是存在越权漏洞
+	NoMeetTheRules = false // 不满足规则，可能不存在越权漏洞
+)
