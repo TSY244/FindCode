@@ -4,36 +4,47 @@ on:
   push:
     branches:
       - Release
-      - Develop  # 添加 develop 分支
+      - Develop
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release version (格式 vX.X.X)'
+        required: true
+        type: string
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  check-commit:
+  determine-release:
     runs-on: ubuntu-latest
     outputs:
       should-release: ${{ steps.check.outputs.should-release }}
       release-tag: ${{ steps.check.outputs.release-tag }}
     steps:
-      - name: Check commit message
+      - name: Determine release parameters
         id: check
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          # 手动触发时使用输入版本
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "release-tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
           
-          # 使用正则表达式匹配 release: vX.X.X 格式
-          if [[ "$COMMIT_MSG" =~ release:\ (v[0-9]+\.[0-9]+\.[0-9]+) ]]; then
+          # 自动触发时检查 commit 消息
+          elif [[ "${{ github.event.head_commit.message }}" =~ release:\ (v[0-9]+\.[0-9]+\.[0-9]+) ]]; then
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "release-tag=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          
+          # 其他情况不发布
           else
             echo "should-release=false" >> $GITHUB_OUTPUT
             echo "release-tag=none" >> $GITHUB_OUTPUT
           fi
 
   build-release:
-    needs: check-commit
-    if: needs.check-commit.outputs.should-release == 'true'
+    needs: determine-release
+    if: needs.determine-release.outputs.should-release == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -67,16 +78,16 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.check-commit.outputs.release-tag }}
-          name: "Release ${{ needs.check-commit.outputs.release-tag }}"
-          body: "Automated multi-platform build for ${{ needs.check-commit.outputs.release-tag }}"
+          tag_name: ${{ needs.determine-release.outputs.release-tag }}
+          name: "Release ${{ needs.determine-release.outputs.release-tag }}"
+          body: "Automated multi-platform build for ${{ needs.determine-release.outputs.release-tag }}"
           draft: false
           prerelease: false
           files: |
             findcode-*
 
   compile-develop:
-    if: github.ref == 'refs/heads/develop'  # 仅在 develop 分支上运行
+    if: ${{ github.ref == 'refs/heads/develop' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,5 +98,4 @@ jobs:
           go-version: '1.23.8'
 
       - name: Compile code
-        run: |
-          go build ./cmd/main.go  # 尝试编译代码
+        run: go build ./cmd/main.go
