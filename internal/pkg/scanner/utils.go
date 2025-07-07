@@ -150,7 +150,7 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]a
 			if !ok || ident.Obj == nil {
 				// nameSet[callName] = struct{}{}
 				//todo 从CodeCache 拿出函数FuncDecl
-				temp, err := getNameDeclFromCodeCache(callName, env)
+				temp, err := getNameDeclFromCodeCache(call, callName, env)
 				if err != nil {
 					logger.Error(err.Error())
 					return true
@@ -182,10 +182,16 @@ func getAllSubFuncDecls(decl *ast.FuncDecl, path string, env *Env) (map[string]a
 	return funcDecls, names
 }
 
-func getNameDeclFromCodeCache(name string, env *Env) ([]ast.FuncDecl, error) {
+func getNameDeclFromCodeCache(call *ast.CallExpr, name string, env *Env) ([]ast.FuncDecl, error) {
 	var ret []ast.FuncDecl
 	if units, ok := env.NoApiCodeCache[name]; ok {
 		for _, unit := range units {
+			// todo 检查funcAst 的相似性
+			// 通过参数个数过滤
+			if len(unit.FuncAst.Type.Params.List) != len(call.Args) { // 针对trpc 优化
+				continue
+			}
+
 			ret = append(ret, *unit.FuncAst)
 		}
 	}
@@ -354,3 +360,10 @@ func GetContainsRule(strs []string) string {
 	ruleStr := strings.Join(allFuncs, " || ")
 	return "! " + ruleStr
 }
+
+//func GetParamFromCallExpr(call *ast.CallExpr) []string {
+//	for _, arg := range call.Args {
+//
+//	}
+//	return nil
+//}

@@ -11,6 +11,7 @@ import (
 	"ScanIDOR/utils/util"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"os"
 	"strings"
 )
 
@@ -34,6 +35,10 @@ type aiStrUnit struct {
 }
 
 func aiScan(config *ai.Config, env2 *Env) error {
+	file, err := os.OpenFile("ai_total_prompt.txt", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
 	for path, apis := range env2.ApiCache {
 		for _, api := range apis {
 			repeatNum := 0
@@ -49,6 +54,7 @@ func aiScan(config *ai.Config, env2 *Env) error {
 			}
 
 			totalPrompt := getTotalPrompt(config, string(funcCode), allSubCode)
+			file.Write([]byte(totalPrompt))
 
 			r := utils.GetChatRequest(config)
 
