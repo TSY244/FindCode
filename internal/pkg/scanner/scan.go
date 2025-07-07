@@ -4,6 +4,7 @@ import (
 	"ScanIDOR/internal/pkg/rule"
 	"ScanIDOR/internal/util/consts"
 	"ScanIDOR/pkg/logger"
+	"ScanIDOR/pkg/set"
 	"ScanIDOR/utils/util"
 	"errors"
 	"fmt"
@@ -252,7 +253,7 @@ func processApi(api cacheUnit, rule *rule.Rule, path string, env *Env) ([]string
 		if subRet {
 			// 可能存在问题的，统一保存
 			hashValue := GetFuncAstHash(api.FuncAst)
-			env.JudgedCache[hashValue] = true
+			env.JudgedCache[hashValue] = consts.MeetTheRules
 			startLine, endLine := getStartAndEndLine(api.Fset, api.FuncAst)
 			result := fmt.Sprintf("%d:%d:%s", startLine, endLine, api.FuncAst.Name.Name)
 			idors = append(idors, result)
@@ -279,12 +280,12 @@ func processFuncDecl(path string, decl *ast.FuncDecl, rule *rule.Rule, env *Env)
 	// 统计funcdecl 的调用逻辑
 	for _, subFuncDecl := range allSubFuncDecls {
 		if ret, err := processSubFuncDecl(subFuncDecl, rule, path, env); err != nil {
-			return false, err
+			return consts.NoMeetTheRules, err
 		} else if !ret {
-			return false, nil
+			return consts.NoMeetTheRules, nil
 		}
 	}
-	return true, nil
+	return consts.MeetTheRules, nil
 }
 
 // processSubFuncDecl 处理函数调用的子函数的
@@ -299,16 +300,30 @@ func processSubFuncDecl(subFuncDecl ast.FuncDecl, rule *rule.Rule, path string, 
 
 	unit, ok := env.AllFuncCacheMap[hashKey]
 	if !ok {
-		if unit == nil {
+		noApiCache, ok := env.NoApiCodeCache[subFuncDecl.Name.Name]
+		if !ok {
 			return false, nil
 		}
-		name := unit.FuncAst.Name.Name
-		if ret, err := processNameDecl(name, rule, path, env); err != nil {
-			return false, err
-		} else if !ret {
-			return false, nil
+		for _, noapis := range noApiCache {
+			if noapis.FilePath == path {
+				unit = noapis
+			}
 		}
-		return true, nil
+		hashKey = GetFuncAstHash(unit.FuncAst)
+		//
+		//if unit == nil {
+		//	return false, nil
+		//}
+		//name := unit.FuncAst.Name.Name
+		//if ret, err := processNameDecl(name, rule, path, env); err != nil {
+		//	return false, err
+		//} else if !ret {
+		//	return false, nil
+		//}
+		//return true, nil
+	}
+	if unit == nil {
+		return consts.MeetTheRules, nil
 	}
 
 	funcCode := unit.Code
@@ -424,9 +439,9 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 		return nil, nil
 	}
 	subDecl, names := getAllSubFuncDecls(decl, path, env)
-	var allSubCode []string
-	for _, sub := range subDecl {
-		hashKey := GetFuncAstHash(&sub)
+	allSubCode := set.NewSet[string]()
+	for hashKey, _ := range subDecl {
+		//hashKey := GetFuncAstHash(&sub)
 		funcInfo, ok := env.AllFuncCacheMap[hashKey]
 		if !ok {
 			continue
@@ -443,23 +458,34 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 		//}
 		//funcCode := string(funcCodeBytes)
 		funcCode := string(funcInfo.Code)
-		if level != consts.FirstLevel {
-			funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		if allSubCode.Contains(funcCode) {
+			continue
 		}
-		allSubCode = append(allSubCode, funcCode)
+		//if level != consts.FirstLevel {
+		//	funcCode += decl.Name.Name + " 调用的代码如下: " + funcCode
+		//}
+		allSubCode.Add(funcCode)
+
 		// 添加底层的代码
 		nextLevelSubCode, err := getAllSubCodeWithLevel(funcInfo.FuncAst, funcInfo.FilePath, env, level+1, maxLevel)
 		if err != nil {
 			return nil, err
 		}
-		allSubCode = append(allSubCode, nextLevelSubCode...)
+		//allSubCode = append(allSubCode, nextLevelSubCode...)
+		allSubCode.AddAll(nextLevelSubCode)
 	}
 	for _, name := range names {
 		if units, ok := env.NoApiCodeCache[name]; ok {
 			for _, unit := range units {
-				allSubCode = append(allSubCode, string(unit.Code))
+				//allSubCode = append(allSubCode, string(unit.Code))
+				hashValue := GetFuncAstHash(unit.FuncAst)
+				if allSubCode.Contains(hashValue) {
+					continue
+				}
+				allSubCode.Add(hashValue)
 			}
 		}
 	}
-	return allSubCode, nil
+
+	return allSubCode.Values(), nil
 }
