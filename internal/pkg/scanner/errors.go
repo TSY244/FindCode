@@ -10,3 +10,8 @@ var (
 var (
 	ArgsSizeNotEqualErr = errors.New("args size not equal")
 )
+
+var (
+	NoRecv  = errors.New("no receiver")
+	RecvErr = errors.New("recv error")
+)
