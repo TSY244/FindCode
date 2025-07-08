@@ -7,13 +7,13 @@ go_mode_target_rule:
   rule: 'true'
 
 func_rule:
-  - func_name: # v2 版本trpc
-      rule: 'beginWithLower()'
+  - func_name:
+      rule: 'true'
     param_name:
       rules:
         - size: 1
           rules:
-            - 'equal("c")'
+            - 'true'
     param_type:
       rules:
         - size: 1
@@ -24,7 +24,7 @@ func_rule:
         - size: 0
           rules:
     recv_type:
-      rule: 'beginStr("*")'
+      rule: 'true'
     recv_name:
       rule: 'true'
 

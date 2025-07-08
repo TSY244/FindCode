@@ -248,14 +248,14 @@ func exprToString(expr ast.Expr) string {
 	}
 }
 
-func checkRecv(decl *ast.FuncDecl) bool {
+func checkRecv(decl *ast.FuncDecl) error {
 	if decl.Recv == nil {
-		return false
+		return NoRecv
 	}
 	if len(decl.Recv.List) != 1 {
-		return false
+		return RecvErr
 	}
-	return true
+	return nil
 }
 
 func filterRecvName(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, error) {
@@ -268,6 +268,9 @@ func filterRecvName(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, erro
 
 	recvName, err := getRecvName(decl)
 	if err != nil {
+		if errors.Is(err, NoRecv) {
+			return true, nil
+		}
 		return false, err
 	}
 	if ret, err := matchStr(funcRule.RecvNameRule.Rule, recvName); err != nil {
@@ -288,6 +291,9 @@ func filterRecvType(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, erro
 
 	recvType, err := getRecvType(decl)
 	if err != nil {
+		if errors.Is(err, NoRecv) {
+			return true, nil
+		}
 		return false, err
 	}
 	if ret, err := matchStr(funcRule.RecvTypeRule.Rule, recvType); err != nil {
@@ -299,19 +305,18 @@ func filterRecvType(decl *ast.FuncDecl, funcRule *rule.FuncRuleUnit) (bool, erro
 }
 
 func getRecvName(decl *ast.FuncDecl) (string, error) {
-	if ret := checkRecv(decl); !ret {
-		return "", errors.New("receiver error")
+	if err := checkRecv(decl); err != nil {
+		return "", err
 	}
-
 	if len(decl.Recv.List[0].Names) == 0 {
 		return "", errors.New("receiver error")
 	}
-	return decl.Recv.List[0].Names[0].Name, nil // go 默认值回有一个接受值
+	return decl.Recv.List[0].Names[0].Name, nil // go 默认值会有一个接受值
 }
 
 func getRecvType(decl *ast.FuncDecl) (string, error) {
-	if ret := checkRecv(decl); !ret {
-		return "", errors.New("receiver error")
+	if err := checkRecv(decl); err != nil {
+		return "", err
 	}
 	recvType := decl.Recv.List[0].Type
 	if pType, ok := recvType.(*ast.SelectorExpr); ok {

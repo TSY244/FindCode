@@ -1,31 +1,32 @@
-越权可能的代码有（并非完整go 函数代码，只有部分片段）：
-1.1
-越权id 类漏洞示例：
-func (v *vPageCouponServiceImpl) TakeCoupon(ctx context.Context,
-     req *pb.TakeCouponReq, rsp *pb.TakeCouponRsp) (err error) {
-     ret, err := v.areaLogic.TakeCoupon(ctx, req.GetCouponBatchId()) // 出现ID越权的地方
-     if err != nil {
-          log.ErrorContextf(ctx, \"batchID: %s TakeCoupon err: %v\", req.GetCouponBatchId(), err)
-          return err
-     }
+1. 越权可能的代码有（并非完整go 函数代码，只有部分片段）：
 
-原因： 可能被遍历id，导致隐藏卷被领取
-1.2
-缺少鉴权示例：
+1.1
+错误代码：
 if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
           return err
      }
      attr.Version = m.RevisionVersion + 1
      // 更新修订
      if err := commitRevertRevision(ctx, app, attr); err != nil {
-这个代码中没有
+     }
+漏洞原因：没有调用鉴权框架进行鉴权，确山鉴权函数，正确的逻辑，添加对应的鉴权
+正确的代码：
+
      if err := checkPermssion(ctx, app, m, attr); err != nil {
           return err
      }
+    if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
+          return err
+     }
+     attr.Version = m.RevisionVersion + 1
+     // 更新修订
+     if err := commitRevertRevision(ctx, app, attr); err != nil {
+     }
 
-1.3 
-缺少对资料进行所属判断示例
-if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
+
+1.2
+错误代码：
+           if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
                return resp
           }
           clientIds, err := apiManager.s.GetAllClientId()
@@ -34,11 +35,27 @@ if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
           return operations.NewGetGetClientsOK().WithPayload(&models.GetClientsResponse{
                Clients: clientInfo,
           })
-没有对client id 判断是否有权限读
+产生漏洞的原因：
+没有对req 中clients 的归属做校验，导致越权
+
+正确的代码:
+           if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
+               return resp
+          }
+          clientIds, err := apiManager.s.GetAllClientId()
+          ids:=checkClientIds(clientIds) // 作用是检查clientIds 的归属，然后返回可以被调用的所有的clientId
+          clients, err := HostInfo.GetAgentsByClientIds(apiManager.s.DBM.DB, ids)
+          clientInfo := convert2.ArrayCopy(clients, convert2.DbHostinfo2moduleHostinfo)
+          return operations.NewGetGetClientsOK().WithPayload(&models.GetClientsResponse{
+               Clients: clientInfo,
+          })
+
+
 
 
 1.3 
-缺属性校验漏洞示例：
+错误代码：
+缺属性校验漏洞示例
 if param.Req.GetModifySeq() == 0 {
           return nil
      }
@@ -46,8 +63,11 @@ if param.Req.GetModifySeq() == 0 {
      // 打卡和作业不允许修改, 接龙和普通收集表都可以修改.
      if param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_SIGN ||
           param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_PAPER {
+
+漏洞原因：
 缺少对文档属性的检查，没有判断该文档是否能改
-完整代码：
+
+正确代码：
 if param.Req.GetModifySeq() == 0 {
           return nil
      }
@@ -59,8 +79,12 @@ if param.Req.GetModifySeq() == 0 {
      if param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_SIGN ||
           param.Meta.GetFormType() == formpb.FormType_FORM_TYPE_PAPER {
 
+
+
+
 1.4
 越权刷评论漏洞：
+错误代码：
 func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCommentReq) error {
      // 1. 校验图片URL是否合法
      validURLs := c.cfg.Get().ValidPicURLs
@@ -73,7 +97,9 @@ func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCom
           }
      }
 }
+漏洞原因：
 但是没有检查订单信息是否一致
+
 准确的代码如下：
 func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCommentReq) error {
      // 1. 校验图片URL是否合法
@@ -98,8 +124,10 @@ func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCom
      }
      return nil
 
-1.5 
+1.5
+
 缺少权限校验
+错误代码：
 // PostCommentFeed 帖子回复
 // nolint
 func (c *CommentImpl) PostCommentFeed(ctx context.Context, req *pb.PostCommentRequest,
@@ -131,6 +159,8 @@ func (c *CommentImpl) PostCommentFeed(ctx context.Context, req *pb.PostCommentRe
           return errs.Newf(errcode.RetErrPicURL, \"CheckContentPictureURL err:%v\", err)
      }
 
+漏洞原因：没有进行权限校验
+
 正确的代码如下：
 应该添加
      // 3.1 权限校验
@@ -151,48 +181,276 @@ func publishFeedPermission(ctx context.Context, user *unionmodel.UserCpInfo) err
 
      return nil
 }
+
+
 1.6 
-vuid助力作为参数，没有加密。黑产可通过用遍历vuid的方式来助力进而获得奖励。
-case ShareAndAssist:
-               errCode = ShareAssistByGuest(ctx, req, assistVuseridCode, assistVuserid, vuserid, actEndTime, reportData, actID, isPrepublish, modID)
-          case ShareStatus:
-               id, err := clients.DeCode(ctx, assistVuseridCode)
-          
-               reqParams := ReqParams{
-                    ActID:         req.ActId,
-                    ModID:         req.ModId,
-                    IsPrepublish:  strtoInt32(req.Context.CgiReqData.Query[\"is_prepublish\"]),
-                    Vuserid:       strtoInt64(req.Context.LoginInfo.Vuserid),
-                    MasterVuserid: id,
-               }
-               shareStatus, err := GetShareStatus(ctx, &reqParams)
-               if err != nil {
-                    lo
-                    g.Errorf(\"GetShareStatus err, err = %v\", err)
-正确代码
-case ShareAndAssist:
-               errCode = ShareAssistByGuest(ctx, req, assistVuseridCode, assistVuserid, vuserid, actEndTime, reportData, actID, isPrepublish, modID)
-          case ShareStatus:
-               id, err := clients.DeCode(ctx, assistVuseridCode)
-               if actID >= svrConfig.GraysActID {
-                    if err != nil || cast.ToInt64(id) <= 10000 {
-                         id = \"\"
-                    }
-               } else {
-                    if err != nil || cast.ToInt64(id) <= 10000 {
-                         id = cast.ToString(assistVuserid)
-                    }
-               }
-               masterVuid := cast.ToInt64(id)
-               reqParams := ReqParams{
-                    ActID:         req.ActId,
-                    ModID:         req.ModId,
-                    IsPrepublish:  strtoInt32(req.Context.CgiReqData.Query[\"is_prepublish\"]),
-                    Vuserid:       strtoInt64(req.Context.LoginInfo.Vuserid),
-                    MasterVuserid: masterVuid,
-               }
-               shareStatus, err := GetShareStatus(ctx, &reqParams)
-               if err != nil {
-                    log.Errorf(\"GetShareStatus err, err = %v\", err)
+越权查看导出的任务信息
+错误代码:
+else {
+		task, err := a.exportTask.GetTaskInfoByTaskID(ctx, taskID)
+        if task.TaskStatus != adminpb.TaskStatus_TASK_PROCESS {
+        rsp.IsOver = wrapperspb.Bool(true)
+		} else {
+			_, err := a.cache.Get(ctx, &cache.Key{
+				Prefix: adminpb.CachePrefix_ADMIN_EXPORT_LOG,
+
+漏洞原因：由于没有检查task 和当前角色角色的所属关系，导致了越权
+准确的代码：
+		taskRsp = append(taskRsp, tasks...)
+	} else {
+		task, err := a.exportTask.GetTaskInfoByTaskID(ctx, taskID)
+		if err != nil {
+			return nil, err
+		}
+		// 防止用户越权查看导出任务信息
+		if authentication.GetUserIdentity(ctx).GetUid() != task.GetUid() {
+			return nil, errs.Newf(int(code.Code_ERR_INVALID_PARAMS), "无权限访问")
+		}
+		if task.GetTaskStatus() != adminpb.TaskStatus_TASK_PROCESS {
+			rsp.IsOver = wrapperspb.Bool(true)
+		} else {
+			_, err := a.cache.Get(ctx, &cache.Key{
+				Prefix: adminpb.CachePrefix_ADMIN_EXPORT_LOG,
+
+1.7 越权更新模版
+错误代码：
+func (a *App) UpdateMarketingItem(ctx context.Context, p *marketingitem.Info) error {
+	p.Item.OpRecord = p.OpRecord
+	if err := a.processor(p.Item.GetType()).Update(ctx, p.Item); err != nil {
+		return err
+
+漏洞原因：由于没有调用详细的鉴权函数导致的越权
+正确代码:
+func (a *App) UpdateMarketingItem(ctx context.Context, p *marketingitem.Info) error {
+	if err := a.checkSaaSPermission(ctx, p.Item); err != nil {
+		return err
+	}
+	p.Item.OpRecord = p.OpRecord
+	if err := a.processor(p.Item.GetType()).Update(ctx, p.Item); err != nil {
+		return err
+
+
+1.8 越权置顶
+错误代码：
+func (p *TAppOperatePrivateMsgProcess) pinMsg(o orm.Ormer) error {
+	var messageIDs []uint32
+	for _, pm := range p.Req.GetPrivateMsgs() {
+		messageIDs = append(messageIDs, pm.GetMessageId())
+	}
+	topRecords, err := p.batchGetPrivateMsgTops(o, p.Req.GetOperator(), messageIDs)
+	if err != nil {
+		p.LogError("batchGetPrivateMsgTops err: %v", err)
+		return err
+	}
+	pinTime := time.Now().Unix()
+	for _, pm := range p.Req.GetPrivateMsgs() {
+
+		topRecord, ok := topRecords[pm.GetMessageId()]
+		if !ok || topRecord == nil {
+			// 无置顶记录，插入置顶记录
+			msgTop := mini_db_model.AppPrivateMessageTop{
+				DeveloperId: p.Req.GetOperator(),
+				MsgId:       pm.GetMessageId(),
+				PinTime:     pinTime,
+				State:       mini_db_model.AppPrivateMsgPinnedState,
+			}
+漏洞原因：
+ for _, pm := range p.Req.GetPrivateMsgs() 这个循环中没有对pm 的所属做判断，导致可以越权置顶
+正确代码如下：
+func (p *TAppOperatePrivateMsgProcess) pinMsg(o orm.Ormer) error {
+	var messageIDs []uint32
+	for _, pm := range p.Req.GetPrivateMsgs() {
+		messageIDs = append(messageIDs, pm.GetMessageId())
+	}
+	topRecords, err := p.batchGetPrivateMsgTops(o, p.Req.GetOperator(), messageIDs)
+	if err != nil {
+		p.LogError("batchGetPrivateMsgTops err: %v", err)
+		return err
+	}
+	privateMsgs, err := p.batchGetPrivateMsgs(o, messageIDs)
+	if err != nil {
+		p.LogError("batchGetPrivateMsgs err: %v", err)
+		return err
+	}
+
+	pinTime := time.Now().Unix()
+	for _, pm := range p.Req.GetPrivateMsgs() {
+		// 检查操作的msg是否是该开发者的
+		if !isValidPrivateMsgID(p.Req.GetOperator(), pm.GetMessageId(), privateMsgs) {
+			p.LogError("invalid msgID to pin, operator: %s, msgID: %d", p.Req.GetOperator(), pm.GetMessageId())
+			return errs.New(errordefine.ErrInvalidInput, "invalid msg to pin")
+		}
+
+		topRecord, ok := topRecords[pm.GetMessageId()]
+		if !ok || topRecord == nil {
+			// 无置顶记录，插入置顶记录
+			msgTop := mini_db_model.AppPrivateMessageTop{
+				DeveloperId: p.Req.GetOperator(),
+				MsgId:       pm.GetMessageId(),
+				PinTime:     pinTime,
+				State:       mini_db_model.AppPrivateMsgPinnedState,
+			}
+
+1.9 越权创建工作室
+错误代码：
+func (c *BusinessServiceServiceImpl) GetCodeTemplate(ctx context.Context, req *pb.GetCodeTemplateReq,
+	rsp *pb.GetCodeTemplateRsp) (err error) {
+	ctx = db.WithDBTxCtx(ctx, dao.M.CodeTemplateDao.DB)
+	log.Infof("begin GetCodeTemplate")
+	defer func() {
+		if err := recover(); err != nil {
+			log.ErrorContextf(ctx, "stack:%s", debug.Stack())
+			rsp.CommonResult = utils.GetCommonResult(ctx, fmt.Errorf("panic: %v", err))
+			return
+		}
+	}()
+	rsp.Data, err = application.M.CodeTemplate.Get(ctx, req)
+	rsp.CommonResult = utils.GetCommonResult(ctx, err)
+	return nil
+}
+
+出现漏洞的原因: 没有验证ProjectId 是否是可以操作的，
+准确的代码是：
+// GetCodeTemplate 获取代码示例
+func (c *BusinessServiceServiceImpl) GetCodeTemplate(ctx context.Context, req *pb.GetCodeTemplateReq,
+	rsp *pb.GetCodeTemplateRsp) (err error) {
+	ctx = db.WithDBTxCtx(ctx, dao.M.CodeTemplateDao.DB)
+	log.Infof("begin GetCodeTemplate")
+	defer func() {
+		if err := recover(); err != nil {
+			log.ErrorContextf(ctx, "stack:%s", debug.Stack())
+			rsp.CommonResult = utils.GetCommonResult(ctx, fmt.Errorf("panic: %v", err))
+			return
+		}
+	}()
+	if err := authtools.Auth(ctx, req.ProjectId); err != nil {
+		rsp.CommonResult = utils.GetCommonResult(ctx, errors.Wrap(utils.WrapErr(common.Code_PERMISSION_DENIED, err),
+			"need permission"))
+		return nil
+	}
+	rsp.Data, err = application.M.CodeTemplate.Get(ctx, req)
+	rsp.CommonResult = utils.GetCommonResult(ctx, err)
+	return nil
+}
+
+
+1.10 身份冒用
+错误代码
+// PublishMsg 消息发布
+func (s *LiveDanmuWrite) PublishMsg(ctx context.Context,
+	req *pb.PublishMsgRequest, rsp *pb.PublishMsgResponse) error {
+	if err := checkParams(ctx, req); err != nil {
+		if errs.Code(err) == constant.ErrDanmuGlobalSwitch {
+			return nil
+		}
+		return err
+	}
+	filterLineBreak(ctx, req.GetItem().GetContent())
+	metrics.IncrCounter(constant.MonitorReqTotal, 1)
+	log.DebugContextf(ctx, "PublishMsg req: %s", constant.ToString(req))
+	if isWebReply(ctx, req) { // web的弹幕回复
+		if err := compatibleWebReq(ctx, req); err != nil { // 包含冗余裁剪，可减少一次反序列化
+			return err
+		}
+	} else { // 弹幕回复的冗余内容裁剪
+		reduceDanmakuInfo(ctx, req)
+	}
+
+发生漏洞的原因：
+没有检查req 中的vuid 是否和cookie 中的是一致,用户的身份id，使用了请求参数里的，未使用cookie里的。
+
+正确代码：
+func (s *LiveDanmuWrite) PublishMsg(ctx context.Context,
+	req *pb.PublishMsgRequest, rsp *pb.PublishMsgResponse) error {
+	if err := checkParams(ctx, req); err != nil {
+		if errs.Code(err) == constant.ErrDanmuGlobalSwitch {
+			return nil
+		}
+		return err
+	}
+	checkAndRejustVuidParam(ctx, req.GetItem()) // 检查并调整vuid信息
+	filterLineBreak(ctx, req.GetItem().GetContent())
+	metrics.IncrCounter(constant.MonitorReqTotal, 1)
+	log.DebugContextf(ctx, "PublishMsg req: %s", constant.ToString(req))
+	if isWebReply(ctx, req) { // web的弹幕回复
+		if err := compatibleWebReq(ctx, req); err != nil { // 包含冗余裁剪，可减少一次反序列化
+			return err
+		}
+	} else { // 弹幕回复的冗余内容裁剪
+		reduceDanmakuInfo(ctx, req)
+	}
+
+1.11 校验登陆人和删除的评论owner
+错误的代码：
+func (w *WriterServiceImpl) CreateCommAlbum(
+	ctx context.Context, req *fa.CreateAlbumReq,
+) (*fa.AlbumInfo, error) {
+	// 校验请求
+	if req.GetAlbumInfo() == nil || req.GetAlbumInfo().GetTitle() == "" {
+		log.ErrorContextf(ctx, "album title empty")
+		return nil, errs.New(int(base.FeedCloudRetCode_FC_ClIENT_PARAM_INVALID_ERR), "album title empty")
+	}
+
+	loginUID := trpcheadtool.GetLoginUID(ctx)
+	// 修正所有人数据
+	albumInfo := req.GetAlbumInfo()
+	albumInfo.OwnerId = proto.String(loginUID)
+
+	var feedSings []*fa.FeedSign
+	for _, sign := range req.GetFeedSigns() {
+		if sign.GetPosterId() != loginUID {
+			log.ErrorContextf(ctx, "feed ignored %v owner not %s", sign.String(), loginUID)
+			metrics.Counter("创建合集越权数量").Incr()
+			continue
+		}
+		feedSings = append(feedSings, sign)
+	}
+
+	album, err := w.manager.CreateAlbum(ctx, albumInfo, req.GetFeedSigns())
+	if err != nil {
+		log.ErrorContextf(ctx, "CreateAlbum failed, req %s, err %v", req.String(), err)
+		return nil, err
+	}
+
+	return album, nil
+}
+漏洞原因：没有校验owner和uid，直接讲req 的数据拿来用
+正确的代码：
+func (w *WriterServiceImpl) CreateCommAlbum(
+	ctx context.Context, req *fa.CreateAlbumReq,
+) (*fa.AlbumInfo, error) {
+	// 校验请求
+	if req.GetAlbumInfo() == nil || req.GetAlbumInfo().GetTitle() == "" {
+		log.ErrorContextf(ctx, "album title empty")
+		return nil, errs.New(int(base.FeedCloudRetCode_FC_ClIENT_PARAM_INVALID_ERR), "album title empty")
+	}
+
+	loginUID := trpcheadtool.GetLoginUID(ctx)
+	// 修正所有人数据
+	albumInfo := req.GetAlbumInfo()
+	albumInfo.OwnerId = proto.String(loginUID)
+
+	var feedSings []*fa.FeedSign
+	for _, sign := range req.GetFeedSigns() {
+		if sign.GetPosterId() != loginUID {
+			log.ErrorContextf(ctx, "feed ignored %v owner not %s", sign.String(), loginUID)
+			metrics.Counter("创建合集越权数量").Incr()
+			continue
+		}
+		feedSings = append(feedSings, sign)
+	}
+
+	album, err := w.manager.CreateAlbum(ctx, albumInfo, feedSings)
+	if err != nil {
+		log.ErrorContextf(ctx, "CreateAlbum failed, req %s, err %v", req.String(), err)
+		return nil, err
+	}
+
+	return album, nil
+}
+
+
+
+
 
 
