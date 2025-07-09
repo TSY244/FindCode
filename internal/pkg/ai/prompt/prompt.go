@@ -5,9 +5,9 @@ import (
 	"os"
 )
 
-const (
+var (
 	JsonSystem     = "你是一个专业的API安全分析引擎，输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。"
-	CheckApiPrompt = `
+	CheckApiPrompt = ruleConstraints + codePrompt + `
 
 下面是需要检测代码 api 函数代码：
 
@@ -30,6 +30,13 @@ result 是bool 返回true/false
 不存在漏洞返回true
 
 reason 是string 返回给出result 的原因，使用中文
+
+1. 额外的注意的检查规则
+1.1 你应该考虑即使存在鉴权，但是有没有可能被绕过，比如限定的127.0.0.1 请求进行访问，但是我通过修改数据包，就可以绕过
+1.2 是否存在直接使用用户输入ID而未验证权限
+1.3 是否缺少当前用户与目标资源的归属比对
+1.4 是否依赖前端传参而非服务端认证
+1.5 如果是在jwt 中获取的数据，那么是正确的
 `
 
 	ReturnBoolPrompt = `
@@ -38,18 +45,20 @@ reason 是string 返回给出result 的原因，使用中文
 )
 
 const (
-	base = "你是一个专业的API安全分析引擎，执行规则：仅分析越权漏洞；不提供修复方案；不推测业务上下文；多角色平台需严格权限分级。输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。某些API接口是公开的，任何用户都可以访问，无需进行越权检查。请确保你能够识别这些接口，并将其排除在越权检查之外。我提供的子调用代码可能是同名函数，并非真正的zi"
+	base = "你是一个专业的API安全分析引擎，执行规则：仅分析越权漏洞；不提供修复方案；不推测业务上下文；多角色平台需严格权限分级。输出要求：最终只返回指定JSON格式，reason字段需详细说明判定依据，不输出思考过程。json 拥有两个字段，result 是一个bool 类型。reason 是为什么给出这个result。某些API接口是公开的，任何用户都可以访问，无需进行越权检查。请确保你能够识别这些接口，并将其排除在越权检查之外"
 )
 
 var (
-	CheckApiSystem  = base + codePrompt + ruleConstraints
-	ruleConstraints = ""
-	codePrompt      = ""
+	CheckApiSystem               = base
+	ruleConstraints              = ""
+	codePrompt                   = ""
+	authenticationFunctionPrompt = ""
 )
 
 const (
-	DefaultRuleConstraintsPath = "prompt/rulePrompt.txt"
-	DefaultCodePrompt          = "prompt/codePrompt.txt"
+	DefaultRuleConstraintsPath          = "prompt/rulePrompt.txt"
+	DefaultCodePrompt                   = "prompt/codePrompt.txt"
+	DefaultAuthenticationFunctionPrompt = "prompt/authenticationFunctionPrompt.txt"
 )
 
 func init() {
@@ -68,6 +77,14 @@ func init() {
 		logger.Error("codePromptFile 加载失败，加载了默认的 codePromptFile")
 	} else {
 		codePrompt = string(codePromptFile)
-		logger.Info("codePromptFile 记载成功")
+		logger.Info("codePromptFile 加载载成功")
+	}
+	authenticationFunctionPromptFile, err := os.ReadFile(DefaultAuthenticationFunctionPrompt)
+	if err != nil {
+		authenticationFunctionPromptFile = []byte("9. 一些鉴权函数的名字：\n9.1 IsAuthenticated - 检查用户是否已认证（登录）\n9.2 AuthorizeUser - 对用户进行授权\n9.3 CheckPermission - 检查用户是否具有特定权限\n9.4 HasRole - 检查用户是否具有特定角色\n9.5 CanAccessResource - 检查用户是否可以访问特定资源\n9.6 MiddlewareAuth - 用作中间件的鉴权函数\n9.7 ValidateToken - 验证访问令牌（如JWT）的有效性\n9.8 IsAdmin - 检查用户是否为管理员\n9.9 EnforcePolicy - 执行某种策略（如基于角色的访问控制RBAC或基于属性的访问控制ABAC）\n9.10 CheckACL - 检查访问控制列表（Access Control List）\n")
+		logger.Error("authenticationFunctionPromptFile 加载失败，加载默认的 authenticationFunctionPrompt")
+	} else {
+		authenticationFunctionPrompt = string(authenticationFunctionPromptFile)
+		logger.Info("authenticationFunction 加载成功")
 	}
 }

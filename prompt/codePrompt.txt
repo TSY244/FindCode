@@ -37,6 +37,7 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
           })
 产生漏洞的原因：
 没有对req 中clients 的归属做校验，导致越权
+正确的做法是获取req 中的clients之后应该进行检查，当前用户是否有权限查看每一个client
 
 正确的代码:
            if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
@@ -53,7 +54,7 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
 
 
 
-1.3 
+1.3
 错误代码：
 缺属性校验漏洞示例
 if param.Req.GetModifySeq() == 0 {
