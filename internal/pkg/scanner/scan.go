@@ -266,9 +266,9 @@ func processApi(api cacheUnit, rule *rule.Rule, path string, env *Env) ([]string
 func processFuncDecl(path string, decl *ast.FuncDecl, rule *rule.Rule, env *Env) (bool, error) {
 	// 1. 获取所有的子调用的函数名字
 	allSubFuncDecls, _ := getAllSubFuncDecls(decl, path, env)
-
+	// 防止无限递归，去除和本funcDecl hash 相同的funcdecl
+	allSubFuncDecls = deleteSameFuncDecl(decl, allSubFuncDecls)
 	// 2. 无法获取funcdecl 的子调用，通过name 进行判断
-	// todo： 和funcdecl 分开统计
 	//for _, name := range names {
 	//	if ret, err := processNameDecl(name, rule, path, env); err != nil {
 	//		return false, err
@@ -488,4 +488,10 @@ func getAllSubCodeWithLevel(decl *ast.FuncDecl, path string, env *Env, level, ma
 	}
 
 	return allSubCode.Values(), nil
+}
+
+func deleteSameFuncDecl(decl *ast.FuncDecl, subFuncDecl map[string]ast.FuncDecl) map[string]ast.FuncDecl {
+	hashKey := GetFuncAstHash(decl)
+	delete(subFuncDecl, hashKey)
+	return subFuncDecl
 }

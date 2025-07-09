@@ -1,0 +1,51 @@
+9. 一些鉴权函数的名字（如果缺少鉴权函数，那么存在越权漏洞的可能性应该提升）：
+9.1 IsAuthenticated - 检查用户是否已认证（登录）
+9.2 AuthorizeUser - 对用户进行授权
+9.3 CheckPermission - 检查用户是否具有特定权限
+9.4 HasRole - 检查用户是否具有特定角色
+9.5 CanAccessResource - 检查用户是否可以访问特定资源
+9.6 MiddlewareAuth - 用作中间件的鉴权函数
+9.7 ValidateToken - 验证访问令牌（如JWT）的有效性
+9.8 IsAdmin - 检查用户是否为管理员
+9.9 EnforcePolicy - 执行某种策略（如基于角色的访问控制RBAC或基于属性的访问控制ABAC）
+9.10 CheckACL - 检查访问控制列表（Access Control List）
+9.11 VerifyUserAccess (参数可能包含资源标识)
+9.12 CheckResourceAction (检查对资源的操作)
+9.13 HasRequiredPermissions (检查多个权限)
+9.14 IsAllowed (通用检查)
+9.15 AuthorizeByRole (通过角色授权)
+9.16 CheckTenantAccess (租户访问检查)
+9.17 VerifyOwnership (验证所有权)
+9.18 CheckFeatureFlag (功能标志检查，有时用于权限)
+9.19 CanPerform (检查操作权限)
+9.20 CheckUserScope (OAuth作用域检查)
+9.21 FixPermissionIDsByAdvPolicy（根据高级权限策略移除 permissionID）
+9.22 userInfo, err := do.GetUserInfo(ctx, req.Uid, req.UserId)  // 通过UserInfo 直接判断
+     	if err != nil || userInfo == nil || userInfo.RoleId != int32(100) { //100 表示admin/manager 等高级权限
+     		return nil
+     	}
+9.23 if !isAuthorized(ctx, manager, applier, req) { 
+     		rsp.Head = utils.Err2RspHead(xerr.New(constants.Unauthorized, "添加权限失败，越权的操作"))
+     		xlog.ErrorContext(ctx, constants.Unauthorized, "添加权限失败，越权的操作",
+     			"manager", manager, "applier", applier, "req", req)
+     		return
+     	}
+
+    func isAuthorized(_ context.Context, manager, applier *userCenter.OldUserInfo, req *pb.CpUserConfirmReq) bool {
+        // 管理员和申请人需要处于同一组织下
+        if applier.Uid != manager.Uid {
+            return false
+        }
+        // 授权用户权限校验
+        switch manager.RoleId {
+        case RoleManager:
+            // 管理员可对所有非管理员角色进行授权
+            return req.Role != RoleManager
+        case RoleOperator:
+            // 运营可对商品运营、达人进行授权
+            return req.Role == RoleProductOperator || req.Role == RoleCp
+        default:
+            // 其他角色不能执行授权操作
+            return false
+        }
+    }
