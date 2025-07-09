@@ -7,6 +7,6 @@ type Config struct {
 	Headers       map[string]string `mapstructure:"headers"`
 	Body          string            `mapstructure:"body"`
 	IsReturnBool  bool
-	IsUseAiPrompt bool
+	IsUseAiPrompt bool // 是否使用自己的ai 提示词
 	Prompt        string
 }
