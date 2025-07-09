@@ -3,7 +3,6 @@ package scanner
 import (
 	"ScanIDOR/pkg/logger"
 	"ScanIDOR/utils/util"
-	"fmt"
 	"go/ast"
 	"go/token"
 )
@@ -30,10 +29,10 @@ func savaNoApiFunc(filePath string, decl *ast.FuncDecl, srcStr string, fset *tok
 
 	env.AllFuncCacheMap[hashKey] = &unit
 	env.NoApiCodeCache[decl.Name.Name] = append(env.NoApiCodeCache[decl.Name.Name], &unit)
-	if decl.Name.Name == "GetInfo" {
-		fmt.Println(hashKey)
-		fmt.Println(decl)
-	}
+	//if decl.Name.Name == "GetInfo" {
+	//	fmt.Println(hashKey)
+	//	fmt.Println(decl)
+	//}
 }
 
 // saveApiFunc 保存api 函数
