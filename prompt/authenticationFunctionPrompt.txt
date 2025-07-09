@@ -20,7 +20,32 @@
 9.19 CanPerform (检查操作权限)
 9.20 CheckUserScope (OAuth作用域检查)
 9.21 FixPermissionIDsByAdvPolicy（根据高级权限策略移除 permissionID）
-9.22 userInfo, err := do.GetUserInfo(ctx, req.Uid, req.UserId)
-     	if err != nil || userInfo == nil || userInfo.RoleId != int32(100) {
+9.22 userInfo, err := do.GetUserInfo(ctx, req.Uid, req.UserId)  // 通过UserInfo 直接判断
+     	if err != nil || userInfo == nil || userInfo.RoleId != int32(100) { //100 表示admin/manager 等高级权限
      		return nil
      	}
+9.23 if !isAuthorized(ctx, manager, applier, req) { 
+     		rsp.Head = utils.Err2RspHead(xerr.New(constants.Unauthorized, "添加权限失败，越权的操作"))
+     		xlog.ErrorContext(ctx, constants.Unauthorized, "添加权限失败，越权的操作",
+     			"manager", manager, "applier", applier, "req", req)
+     		return
+     	}
+
+    func isAuthorized(_ context.Context, manager, applier *userCenter.OldUserInfo, req *pb.CpUserConfirmReq) bool {
+        // 管理员和申请人需要处于同一组织下
+        if applier.Uid != manager.Uid {
+            return false
+        }
+        // 授权用户权限校验
+        switch manager.RoleId {
+        case RoleManager:
+            // 管理员可对所有非管理员角色进行授权
+            return req.Role != RoleManager
+        case RoleOperator:
+            // 运营可对商品运营、达人进行授权
+            return req.Role == RoleProductOperator || req.Role == RoleCp
+        default:
+            // 其他角色不能执行授权操作
+            return false
+        }
+    }
