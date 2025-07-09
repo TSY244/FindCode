@@ -79,7 +79,7 @@ func GetDeepseekRequest(r *request.ChatRequest, totalPrompt string, config *ai.C
 
 	msgs = append(msgs, request.OpenAiMessage{
 		Role:    "user",
-		Content: totalPrompt,
+		Content: prompt.CodePrompt + prompt.RuleConstraints + prompt.AuthenticationFunctionPrompt + totalPrompt,
 	})
 	deepseekreq.Messages = msgs
 
