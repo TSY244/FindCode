@@ -1,11 +1,14 @@
 #!/bin/bash
 
 
+
 url="${GIT_URL:-$1}"
 
 
 # 从URL提取仓库名称
 repo_name=$(basename $url .git)
+
+cd ..
 
 # 克隆仓库
 echo "正在克隆仓库: $url"
@@ -20,9 +23,11 @@ fi
 path=$repo_name
 echo "仓库路径: $path"
 
+make build_cmd
+
 # 运行FindCode程序
 echo "正在运行FindCode..."
-./FindCode -l $path -r rule/find_go_swagger_api.yaml
+./FindCodeCommand  -l $path
 
 if [ $? -ne 0 ]; then
     echo "警告：FindCode运行可能出错"

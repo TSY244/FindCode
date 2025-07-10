@@ -24,6 +24,8 @@
 - 只过滤出想获取的函数
 - 查找指定的代码片段
 
+FindCodeServer 版本是command 版本和server 版本合二为一
+FindCodeCommand 版本纯命令行版本
 
 
 

@@ -66,14 +66,25 @@ jobs:
         with:
           go-version: '1.23.8'
 
-      - name: Build CLI binary
+      - name: Build Command binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          OUTPUT="findcode-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -o $OUTPUT ./cmd/main.go
-          echo "CLI_OUTPUT=$OUTPUT" >> $GITHUB_ENV
+          OUTPUT="FindCodeCommand-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          make build_cmd
+          mv FindCodeCommand $OUTPUT
+          echo "COMMAND_OUTPUT=$OUTPUT" >> $GITHUB_ENV
+
+      - name: Build Server binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          OUTPUT="FindCodeServer-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          make build_server
+          mv FindCodeServer $OUTPUT
+          echo "SERVER_OUTPUT=$OUTPUT" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -84,18 +95,26 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            findcode-*
+            FindCodeCommand-*
+            FindCodeServer-*
 
   compile-develop:
     if: ${{ github.ref == 'refs/heads/develop' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.23.8'
-
-      - name: Compile code
-        run: go build ./cmd/main.go
+      - name: Compile Command
+        run: make build_cmd
+      - name: Compile Server
+        run: make build_server
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4  # 关键修复点
+        with:
+          name: develop-binaries
+          path: |
+            FindCodeCommand
+            FindCodeServer
