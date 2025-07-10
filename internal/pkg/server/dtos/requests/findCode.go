@@ -9,5 +9,7 @@ type APIScanRequest struct {
 	AiPrompt            string   `form:"aiPrompt"`
 	IsReturnBool        bool     `form:"isReturnBool"`
 	Model               string   `form:"aiModel"`
+	PermissionModel     string   `form:"permissionModel"`
+	ProjectType         string   `form:"projectType"`
 	AuthenticationCodes []string `form:"authenticationCodes"`
 }
