@@ -20,7 +20,7 @@ RUN go mod download
 COPY . .
 
 # Build the application with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -o FindCodeServer  cmd/server.go
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o FindCodeServer  cmd/default/main.go
 
 # Use a minimal base image for the final container
 FROM alpine:latest
@@ -33,9 +33,10 @@ COPY --from=builder /build/FindCodeServer .
 COPY --from=builder /build/etc etc/
 COPY --from=builder /build/rule rule/
 COPY --from=builder /build/web web/
+COPY --from=builder /build/script script/
 
 # Expose the necessary ports
 EXPOSE 8080
 
 # Run the application
-CMD ["./FindCodeServer"]
+CMD ["./FindCodeServer","-mode","server"]
