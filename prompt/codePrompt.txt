@@ -9,9 +9,8 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
      // 更新修订
      if err := commitRevertRevision(ctx, app, attr); err != nil {
      }
-漏洞原因：没有调用鉴权框架进行鉴权，确山鉴权函数，正确的逻辑，添加对应的鉴权
+漏洞原因：没有调用鉴权框架进行鉴权，缺少鉴权函数，正确的逻辑是添加对应的鉴权
 正确的代码：
-
      if err := checkPermssion(ctx, app, m, attr); err != nil {
           return err
      }
@@ -29,7 +28,7 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
            if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
                return resp
           }
-          clientIds, err := apiManager.s.GetAllClientId()
+          clientIds, err := req.GetAllClientId()
           clients, err := HostInfo.GetAgentsByClientIds(apiManager.s.DBM.DB, clientIds)
           clientInfo := convert2.ArrayCopy(clients, convert2.DbHostinfo2moduleHostinfo)
           return operations.NewGetGetClientsOK().WithPayload(&models.GetClientsResponse{
@@ -43,7 +42,7 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
            if resp := middleware2.CheckJwt(params.HTTPRequest, apiManager.s); resp != nil {
                return resp
           }
-          clientIds, err := apiManager.s.GetAllClientId()
+          clientIds, err := req.GetAllClientId()
           ids:=checkClientIds(clientIds) // 作用是检查clientIds 的归属，然后返回可以被调用的所有的clientId
           clients, err := HostInfo.GetAgentsByClientIds(apiManager.s.DBM.DB, ids)
           clientInfo := convert2.ArrayCopy(clients, convert2.DbHostinfo2moduleHostinfo)
@@ -57,7 +56,7 @@ if m, err = meta.GetMeta(ctx, app, attr.FileID); err != nil {
 1.3
 错误代码：
 缺属性校验漏洞示例
-if param.Req.GetModifySeq() == 0 {
+     if param.Req.GetModifySeq() == 0 {
           return nil
      }
 
@@ -69,7 +68,7 @@ if param.Req.GetModifySeq() == 0 {
 缺少对文档属性的检查，没有判断该文档是否能改
 
 正确代码：
-if param.Req.GetModifySeq() == 0 {
+     if param.Req.GetModifySeq() == 0 {
           return nil
      }
      // 检查可修改设置是否打开.
@@ -126,7 +125,6 @@ func (c *consumerImpl) checkPublishReq(ctx context.Context, req *BatchPublishCom
      return nil
 
 1.5
-
 缺少权限校验
 错误代码：
 // PostCommentFeed 帖子回复
@@ -310,7 +308,7 @@ func (c *BusinessServiceServiceImpl) GetCodeTemplate(ctx context.Context, req *p
 	return nil
 }
 
-出现漏洞的原因: 没有验证ProjectId 是否是可以操作的，
+出现漏洞的原因: 没有验证ProjectId 是否是有权限操作的
 准确的代码是：
 // GetCodeTemplate 获取代码示例
 func (c *BusinessServiceServiceImpl) GetCodeTemplate(ctx context.Context, req *pb.GetCodeTemplateReq,
@@ -415,7 +413,7 @@ func (w *WriterServiceImpl) CreateCommAlbum(
 
 	return album, nil
 }
-漏洞原因：没有校验owner和uid，直接讲req 的数据拿来用
+漏洞原因：没有校验owner和uid 的匹配性，直接讲req 的数据拿来用
 正确的代码：
 func (w *WriterServiceImpl) CreateCommAlbum(
 	ctx context.Context, req *fa.CreateAlbumReq,
@@ -450,8 +448,151 @@ func (w *WriterServiceImpl) CreateCommAlbum(
 	return album, nil
 }
 
+1.12 没有验证订单信息
+错误代码：
+func (l *OrderWriteLogic) ModifyPayStatusHandler(
+	ctx context.Context, req *pb.ModifyPayStatusAccessReq, rsp *pb.ModifyPayStatusAccessRsp) error {
+	payOrderID := req.GetCoreReq().GetPayOrderId()
+	opera := req.GetCoreReq().GetOperation()
+	if err := l.CheckFrequency(payOrderID, opera); err != nil {
+		log.ErrorContextf(l.Ctx,
+			"ModifyPayStatusHandler CheckFrequency PayOrderID [%s] Opera [%d] err [%+v]", payOrderID, opera, err)
+		return err
+	}
+	l.userID = l.GetLoginUserID()
+	if err := l.checkOrderCommIdentity(l.userID, payOrder, req.CoreReq.GetOperation()); err != nil {
+		return err
+	}
+	req.GetCoreReq().UserId = l.userID
+	rspCore, err := l.Sc.Core.ModifyPayStatus(ctx, req.CoreReq)
+	if err != nil {
+		log.ErrorContextf(l.Ctx, "ModifyPayStatusHandler userID [%s] req [%+v] err [%+v]", l.userID, req, err)
+		return err
+	}
+	rsp.CoreRsp = rspCore
+	return nil
+}
+
+// checkRefundIdentity 通用校验订单用户身份
+func (l *OrderWriteLogic) checkOrderCommIdentity(userID string, orderType OrderType, opera uint32) error {
+	if orderType == payOrder {
+		if userID == "0" {
+			return errcode.NewFormatErr(errcode.ErrCheckUserLogin, "user need login")
+		}
+	} else {
+		if err := l.checkRole(userID, opera); err != nil {
+			return err
+		}
+	}
+
+	bCheckLogin := true
+	if _, ok := noCheckLoginTokenMap[opera]; ok {
+		bCheckLogin = false
+	}
+	if bCheckLogin {
+		err := l.CheckUserLoginToken(l.Ctx, config.GlobalConfig().AppID)
+		if err != nil {
+			log.ErrorContextf(l.Ctx, "userID [%s] CheckUserLoginToken err [%+v]", userID, err)
+			return err
+		}
+	}
+
+	if orderType == payOrder {
+		return nil
+	}
+
+	return l.CheckPrivilege(l.roleInfo, opera)
+}
+漏洞原因：
+在这个函数中虽然存在CheckPrivilege 但是由于orderType == payOrder 这个地方为true 直接就返回了，并且在外面函数没有验证payOrderID 当前用户是否能够操作
 
 
+1.13 由于过度依赖前端的参数，导致越权
+错误代码：
 
+// GetActSkuInfo 根据活动ID查询活动基础信息 & 参与活动的SKU库存信息
+func (l *ActSkuLogic) GetActSkuInfo(req *pb.GetActSkuInfoReq, rsp *pb.GetActSkuInfoRsp) error {
+	var err error
+	l.videoHead, err = vhead.NewVHead(l.ctx)
+	if err != nil {
+		log.ErrorContextf(l.ctx, "GetActSkuInfo vhead.NewVHead fail: %v", err)
+		return err
+	}
+	// 支持外部场景调用
+	if req.GetCheckUserRight() {
+		// 校验用户身份，这里校验的是读取活动详情权权限（1034）
+		if err = l.sc.RightProxy.CheckUserRight(l.ctx, []int64{right.ROLE_RIGHT_TYPE_READ_ACTIVITY}); err != nil {
+			return err
+		}
+	}
+	// 获取活动信息并构造返回
+	coreReq := coreread.GetActSkuBaseInfoReq{
+		ActId: req.GetActId(),
+	}
+	coreRsp, err := l.sc.ActivityCoreReadService.GetActSkuBaseInfo(l.ctx, &coreReq)
+	if err != nil {
+		log.ErrorContextf(l.ctx, "get act base info fail: %v, req: %v", err, req)
+		return err
+	}
+	log.InfoContextf(l.ctx, "GetActSkuBaseInfo req: %v, rsp: %v", coreReq, coreRsp)
+	rsp.ActInfo = coreRsp.GetActInfo()
+	rsp.ActSkuInfoList = coreRsp.GetActSkuInfo()
+	return nil
+}
+func (x *GetActSkuInfoReq) GetCheckUserRight() bool {
+	if x != nil {
+		return x.CheckUserRight
+	}
+	return false
+}
 
+直接从请求中获取这个bool 类型的值，如果存在手动构造这个为true 将会绕过 CheckUserRight 检查
 
+1.14 由于没有校验id 可能导致的越权问题
+func (l *ActWriteLogic) ProcessAddActReq(req *pb.AddActReq, rsp *pb.AddActRsp) error {
+	var err error
+	l.videoHead, err = vhead.NewVHead(l.ctx)
+	.....
+	//权限校验
+	authID := []int64{right.ROLE_RIGHT_TYPE_MGR_ACTIVITY}
+	if req.ActInfo.ActBaseInfo.ActType == actcomm.ActivityType_E_ACT_CHANNEL {
+		authID = []int64{right.ROLE_RIGHT_TYPE_MGR_CHANNEL}
+	}
+	if err = l.sc.RightProxy.CheckUserRight(l.ctx, authID); err != nil {
+		log.ErrorContextf(l.ctx, "ProcessAddActReq CheckAuthentication fail, [%s]", err.Error())
+		return err
+	}
+	// 针对新加入营销活动的sku库存锁定
+	if err = l.lockAndSetMarketingBatchInfo(l.ctx, req); err != nil {
+		return err
+	}
+....
+
+/ lockAndSetMarketingBatchInfo 设置批次信息
+func (l *ActWriteLogic) lockAndSetMarketingBatchInfo(ctx context.Context, req *pb.AddActReq) error {
+.....
+	var quanTask []func() error
+	// 找到未锁定的批次信息
+	for _, threshold := range req.GetActInfo().GetGwpConf().GetThresholdConfs() {
+		for _, tmpGiftConf := range threshold.GetGiftDetailConf().GetGiftConfs() {
+			giftConf := tmpGiftConf
+			if giftConf.GetBatchId() == "" {
+				quanTask = append(quanTask, func() error {
+					cCtx := trpc.CloneContext(ctx)
+					g := giftConf
+					skuInfo, err := l.sc.ProductProxy.GetSkuStaticInfo(cCtx, g.GetSkuId())
+					if err != nil {
+						return err
+					}
+					batchInfo, err := l.sc.QuantityAdminProxy.CreateSkuLock(ctx, &corepb.CreateSkuLockReq{
+						LockInfo: &corepb.SkuLockInfo{
+							ProdId:       skuInfo.GetProductId(),
+							SkuId:        g.GetSkuId(),
+							LockNum:      uint32(giftConf.GetQuantity()),
+							Usage:        corepb.LockUsageType_LockUsageTypeNormal,
+							LockName:     config.GlobalConfig().MarketingActInfo.BatchLockName,
+							CreateSource: corepb.CreateSource_CREATE_SOURCE_API,
+						},
+					})
+....
+在lockAndSetMarketingBatchInfo 函数中没有对ProdId 的值进行一个过滤，导致了水平越权，只要有CheckUserRight 这个函数需要的权限就可以使用任意的id 。没有对id 做检查
