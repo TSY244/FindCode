@@ -47,17 +47,17 @@ ls -al
 echo "/app 目录"
 ls -al /app
 
-# 制作findCode 到 全局可调用的地方
-ln -s /app/FindCode /usr/local/bin/FindCode
+# 制作FindCodeCommand 到 全局可调用的地方
+ln -s /app/FindCodeCommand /usr/local/bin/FindCodeCommand
 
-# 执行FindCode扫描
-echo "执行FindCode扫描..."
+# 执行FindCodeCommand扫描
+echo "执行FindCodeCommand扫描..."
 echo "目标代码路径: $TARGET_PATH"
 echo "代码类型: $CODE_TYPE"
 echo "使用规则文件: $RULE_FILE"
 echo "输出报告路径: $OUTPUT_REPORT"
 
-FindCode -l "$TARGET_PATH" -r "$RULE_FILE" -o "$OUTPUT_REPORT" -go_target "$TARGET_CODE" -c "/app/etc/config.yaml"
+FindCodeCommand -l "$TARGET_PATH" -r "$RULE_FILE" -o "$OUTPUT_REPORT" -go_target "$TARGET_CODE" -c "/app/etc/config.yaml"
 
 
 # 检查执行状态
@@ -65,10 +65,10 @@ if [ $? -eq 0 ]; then
     cat "$OUTPUT_REPORT"
     ls /home/runner/work/augeu/augeu/report/ -al
 
-    echo "FindCode扫描完成，报告已生成在: $OUTPUT_REPORT"
+    echo "FindCodeCommand扫描完成，报告已生成在: $OUTPUT_REPORT"
     exit 0
 else
-    echo "FindCode扫描失败"
+    echo "FindCodeCommand扫描失败"
     exit 1
 fi
 
