@@ -138,7 +138,6 @@ func (l *ActWriteSkuLogic) CheckActSkuUpdate(actSkus []*actcomm.ActSkuInfo, actI
 
 9.4 可能是误判成没有敏感信息返回
 错误代码：
-
 // ProcessGetProdActSkuReq 查询商品下SKU参与的指定活动配置 B端接口
 func (l *ActProdLogic) ProcessGetProdActSkuReq(req *pb.GetProdActSkuReq, rsp *pb.GetProdActSkuRsp) error {
 	var err error

@@ -121,6 +121,8 @@ func (f *FindCodeController) Scan(c *gin.Context) {
 			r.AiConfig.IsReturnBool = request.IsReturnBool
 		}
 		r.AiConfig.Prompt = request.AiPrompt
+		r.AiConfig.PermissionModel = request.PermissionModel
+		r.AiConfig.ProductType = request.ProjectType
 	}
 
 	env := scanner.NewEnv()

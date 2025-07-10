@@ -39,6 +39,9 @@ func aiScan(config *ai.Config, env2 *Env) error {
 	if err != nil {
 		return err
 	}
+
+	productDetail := utils.GetProductTypeDetail(config.ProductType)
+	permissionDetail := utils.GerPermissionDetail(config.PermissionModel)
 	for path, apis := range env2.ApiCache {
 		for _, api := range apis {
 			repeatNum := 0
@@ -54,6 +57,8 @@ func aiScan(config *ai.Config, env2 *Env) error {
 			}
 
 			totalPrompt := getTotalPrompt(config, string(funcCode), allSubCode)
+			totalPrompt = totalPrompt + productDetail + permissionDetail
+
 			file.Write([]byte(totalPrompt))
 
 			r := utils.GetChatRequest(config)
