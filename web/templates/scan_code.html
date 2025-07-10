@@ -101,6 +101,8 @@
                            class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
                 </div>
 
+
+
 <!--                <div class="form-group">-->
 <!--                    <label for="type" class="block text-sm font-medium text-neutral-700 mb-1">Type</label>-->
 <!--                    <input type="text" id="type" name="type" placeholder="例如: gin/go_swagger/trpc" required-->
@@ -151,6 +153,30 @@
                             </span>
                         <input type="checkbox" id="isUseAi" name="isUseAi" value="true" class="checkbox-primary ml-2">
                     </label>
+                </div>
+
+                <div id="projectTypeInputGroup" class="form-group hidden">
+                    <label for="projectType" class="block text-sm font-medium text-neutral-700 mb-1">项目简介</label>
+                    <input type="text" id="projectType" name="projectType" placeholder="例如: 多角色多权限的后台项目/" required
+                           class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all">
+                </div>
+
+                <div id="permissionModelSelectGroup"  class="form-group hidden">
+                    <label for="permissionModel" class="block text-sm font-medium text-neutral-700 mb-1">权限模型</label>
+                    <div class="relative">
+                        <select id="permissionModel" name="permissionModel" class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:form-input-focus transition-all appearance-none">
+                            <option value="public">无权限模型</option>
+                            <option value="userGroups">用户组模型、简单角色模型</option>
+                            <option value="RBAC">标准角色模型 (RBAC) 是最主流、最平衡的选择</option>
+                            <option value="RBACWithConstraints">带约束的RBAC</option>
+                            <option value="ABAC/PBAC">超细粒度/动态/复杂上下文</option>
+                            <option value="DAC">资源所有者控制</option>
+                            <option value="MAC">最高强制安全</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-500">
+                            <i class="fa fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 新增的AI模型选择下拉框 -->
@@ -250,6 +276,8 @@
     const addCodeSnippetBtn = document.getElementById('addCodeSnippetBtn');
     const codeSnippetsList = document.getElementById('codeSnippetsList');
     const authenticationCodes = document.getElementById('authenticationCodes');
+    const projectTypeInputGroup= document.getElementById('projectTypeInputGroup');
+    const permissionModelSelectGroup= document.getElementById('permissionModelSelectGroup');
 
     // 存储所有代码片段
     let codeSnippets = [];
@@ -261,11 +289,16 @@
             aiModelSelectGroup.classList.remove('hidden');
             // 显示AI提示按钮组
             aiPromptButtonGroup.classList.remove('hidden');
+            permissionModelSelectGroup.classList.remove('hidden');
+            projectTypeInputGroup.classList.remove('hidden');
             aiPromptButtonGroup.classList.add('flex', 'flex-col');
         } else {
             // 隐藏AI模型选择下拉框、AI提示按钮组和输入框组
             aiModelSelectGroup.classList.add('hidden');
             aiPromptButtonGroup.classList.add('hidden');
+            projectTypeInputGroup.classList.add('hidden');
+            permissionModelSelectGroup.classList.add('hidden');
+
             aiPromptButtonGroup.classList.remove('flex', 'flex-col');
             aiPromptGroup.classList.add('hidden');
             isReturnBoolGroup.classList.add('hidden');
@@ -405,6 +438,8 @@
     if (isUseAiCheckbox.checked) {
         aiModelSelectGroup.classList.remove('hidden');
         aiPromptButtonGroup.classList.remove('hidden');
+        permissionModelSelectGroup.classList.remove('hidden');
+        projectTypeInputGroup.classList.remove('hidden');
         aiPromptButtonGroup.classList.add('flex', 'flex-col');
     }
 </script>

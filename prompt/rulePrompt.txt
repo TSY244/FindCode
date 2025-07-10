@@ -19,6 +19,8 @@
 2.3 仅基于代码可见逻辑判断
 2.4 返回格式
 最后只返回一个JSON格式：{ "result": "", "reason": "" }
+2.5 不猜测远程调用的代码，基于提供的代码进行分析
+
 
 3. 资源访问控制
     公开的资源不需要检查越权。
@@ -56,3 +58,114 @@
 8.5 是否存在直接使用用户输入ID而未验证权限
 8.6 是否缺少当前用户与目标资源的归属比对
 8.7 是否依赖前端传参而非服务端认证
+
+
+9. 容易以为误判的情况
+9.1 条件控制判断出错-存在越权，但是检测出没有越权
+问题代码：
+	if err := l.checkOrderCommIdentity(l.userID, payOrder, req.CoreReq.GetOperation()); err != nil {
+		return err
+	}
+	在这个函数的调用中，传入了payOrder 类型的参数
+	// checkRefundIdentity 通用校验订单用户身份
+    func (l *OrderWriteLogic) checkOrderCommIdentity(userID string, orderType OrderType, opera uint32) error {
+    	if orderType == payOrder {
+    		if userID == "0" {
+    			return errcode.NewFormatErr(errcode.ErrCheckUserLogin, "user need login")
+    		}
+    	} else {
+    		if err := l.checkRole(userID, opera); err != nil {
+    			return err
+    		}
+    	}
+
+    	bCheckLogin := true
+    	if _, ok := noCheckLoginTokenMap[opera]; ok {
+    		bCheckLogin = false
+    	}
+    	if bCheckLogin {
+    		err := l.CheckUserLoginToken(l.Ctx, config.GlobalConfig().AppID)
+    		if err != nil {
+    			log.ErrorContextf(l.Ctx, "userID [%s] CheckUserLoginToken err [%+v]", userID, err)
+    			return err
+    		}
+    	}
+
+    	if orderType == payOrder {
+    		return nil
+    	}
+
+    	return l.CheckPrivilege(l.roleInfo, opera)
+    }
+    原因：
+    在这个函数中虽然存在CheckPrivilege 但是由于orderType == payOrder 这个地方为true 直接就返回了
+
+9.2 存在越权，但是风险不大，所以需要在reason 中体现，有越权，但是无风险
+
+// CheckActSkuUpdate 活动sku增删操作前置校验
+func (l *ActWriteSkuLogic) CheckActSkuUpdate(actSkus []*actcomm.ActSkuInfo, actID, prod string) error {
+	// step1: 读取数据库，活动详情
+	coreReq := core.GetActListReq{
+		//ActCoreSign:
+		ActCondition: &actcomm.ActSQLCond{ActId: []string{actID}},
+	}
+	coreRsp, err := l.sc.ActivityCoreReadService.GetActList(l.ctx, &coreReq)
+	if err != nil {
+		log.ErrorContextf(l.ctx, "ProcessAddActSkuReq GetActList req [%+v] fail err [%v]",
+			coreReq, err.Error())
+		return err
+	}
+	if len(coreRsp.ActInfoList) == 0 {
+		return errors.InternalServiceErr("ProcessAddActSkuReq GetActList empty")
+	}
+	actInfo := coreRsp.ActInfoList[0]
+	// 只有夺宝魔盒活动需要做奖品增删的校验
+	if actInfo.GetActBaseInfo().GetActType() != actcomm.ActivityType_E_ACT_BOX {
+		return nil
+	}
+	// 2. 获取活动sku信息
+	existActSkuInfoList, err := l.GetProdActSku(l.ctx, &pb.AddActSkuReq{
+		ProdId: prod,
+		ActId:  actID,
+	})
+	if _, err = l.CheckActSKUOpLegality(&pb.AddActSkuReq{ActId: actID, ProdId: prod, ActSkuInfoList: actSkus},
+		existActSkuInfoList, actInfo); err != nil {
+		return err
+	}
+	return nil
+}
+虽然没有检验actID，prod 但是整个接口没有返回敏感信心，也没有执行敏感操作，只有check 而已
+
+9.4 可能是误判成没有敏感信息返回
+错误代码：
+// ProcessGetProdActSkuReq 查询商品下SKU参与的指定活动配置 B端接口
+func (l *ActProdLogic) ProcessGetProdActSkuReq(req *pb.GetProdActSkuReq, rsp *pb.GetProdActSkuRsp) error {
+	var err error
+	l.videoHead, err = vhead.NewVHead(l.ctx)
+	if err != nil {
+		log.ErrorContextf(l.ctx, "ProcessGetProdActSkuReq vhead.NewVHead fail,err[%+v]", err)
+		return err
+	}
+	// 参数校验
+	err = req.Validate()
+	if err != nil {
+		log.ErrorContextf(l.ctx, "ProcessGetProdActSkuReq req Validate fail, [%+v]", err)
+		return errors.ErrInvalidParams
+	}
+	var actType actcomm.ActivityType
+	rsp.ActSkuInfoList, actType, err = l.GetActSkuInfoAndSetQuan(req)
+	if err != nil {
+		log.ErrorContextf(l.ctx, "ProcessGetProdActSkuReq GetActSkuInfoAndSetQuan fail, [%+v]", err)
+		return err
+	}
+	if actType == actcomm.ActivityType_E_ACT_CHANNEL {
+		rsp.ProdDiscountInfo, err = l.GetActProdDiscountInfo(req.ActId, req.ProdId)
+		if err != nil {
+			log.ErrorContextf(l.ctx, "ProcessGetProdActSkuReq GetActProdDiscountInfo fail, [%+v]", err)
+			return err
+		}
+	}
+	return nil
+}
+
+这个函数中没有返回值，但是通过rsp 传输了敏感数据，所以这个地方越权是有风险的
