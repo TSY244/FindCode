@@ -34,6 +34,7 @@ COPY --from=builder /build/etc etc/
 COPY --from=builder /build/rule rule/
 COPY --from=builder /build/web web/
 COPY --from=builder /build/script script/
+COPY --from=builder /build/prompt prompt/
 
 # Expose the necessary ports
 EXPOSE 8080
