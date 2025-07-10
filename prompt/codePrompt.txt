@@ -547,3 +547,52 @@ func (x *GetActSkuInfoReq) GetCheckUserRight() bool {
 }
 
 直接从请求中获取这个bool 类型的值，如果存在手动构造这个为true 将会绕过 CheckUserRight 检查
+
+1.14 由于没有校验id 可能导致的越权问题
+func (l *ActWriteLogic) ProcessAddActReq(req *pb.AddActReq, rsp *pb.AddActRsp) error {
+	var err error
+	l.videoHead, err = vhead.NewVHead(l.ctx)
+	.....
+	//权限校验
+	authID := []int64{right.ROLE_RIGHT_TYPE_MGR_ACTIVITY}
+	if req.ActInfo.ActBaseInfo.ActType == actcomm.ActivityType_E_ACT_CHANNEL {
+		authID = []int64{right.ROLE_RIGHT_TYPE_MGR_CHANNEL}
+	}
+	if err = l.sc.RightProxy.CheckUserRight(l.ctx, authID); err != nil {
+		log.ErrorContextf(l.ctx, "ProcessAddActReq CheckAuthentication fail, [%s]", err.Error())
+		return err
+	}
+	// 针对新加入营销活动的sku库存锁定
+	if err = l.lockAndSetMarketingBatchInfo(l.ctx, req); err != nil {
+		return err
+	}
+....
+
+/ lockAndSetMarketingBatchInfo 设置批次信息
+func (l *ActWriteLogic) lockAndSetMarketingBatchInfo(ctx context.Context, req *pb.AddActReq) error {
+.....
+	var quanTask []func() error
+	// 找到未锁定的批次信息
+	for _, threshold := range req.GetActInfo().GetGwpConf().GetThresholdConfs() {
+		for _, tmpGiftConf := range threshold.GetGiftDetailConf().GetGiftConfs() {
+			giftConf := tmpGiftConf
+			if giftConf.GetBatchId() == "" {
+				quanTask = append(quanTask, func() error {
+					cCtx := trpc.CloneContext(ctx)
+					g := giftConf
+					skuInfo, err := l.sc.ProductProxy.GetSkuStaticInfo(cCtx, g.GetSkuId())
+					if err != nil {
+						return err
+					}
+					batchInfo, err := l.sc.QuantityAdminProxy.CreateSkuLock(ctx, &corepb.CreateSkuLockReq{
+						LockInfo: &corepb.SkuLockInfo{
+							ProdId:       skuInfo.GetProductId(),
+							SkuId:        g.GetSkuId(),
+							LockNum:      uint32(giftConf.GetQuantity()),
+							Usage:        corepb.LockUsageType_LockUsageTypeNormal,
+							LockName:     config.GlobalConfig().MarketingActInfo.BatchLockName,
+							CreateSource: corepb.CreateSource_CREATE_SOURCE_API,
+						},
+					})
+....
+在lockAndSetMarketingBatchInfo 函数中没有对ProdId 的值进行一个过滤，导致了水平越权，只要有CheckUserRight 这个函数需要的权限就可以使用任意的id 。没有对id 做检查
