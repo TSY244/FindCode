@@ -589,3 +589,9 @@ AiSk=xxxxx docker-compose up -d
 ```
 需要添加一个环境变量
 
+
+
+# 批量处理结果
+简单处理可以使用如下的项目
+> https://github.com/TSY244/GetFuncAndStatue
+
